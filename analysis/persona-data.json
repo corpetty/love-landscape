@@ -1,0 +1,1649 @@
+{
+  "generated": "2026-03-31T07:03:56.569Z",
+  "personas": [
+    {
+      "name": "Elena",
+      "title": "The Sovereign Connector",
+      "code": "L2_7R3XyTlHsePAyKeisg",
+      "params": [
+        0.9275,
+        0.1125,
+        0.8425000000000001,
+        0.79,
+        0.22499999999999998,
+        0.27999999999999997,
+        0.6924999999999999,
+        0.8900000000000001,
+        0.7525000000000001,
+        0.7849999999999999,
+        0.655,
+        0.635,
+        0.6999999999999998
+      ],
+      "summary": "This is someone who values deep emotional friendships, orients toward relational openness, and is comfortable in the tender middle.",
+      "deviations": [],
+      "fieldStats": {
+        "minField": -1.3687878847122192,
+        "maxField": 0.1706990897655487,
+        "range": 1.539486974477768,
+        "meanField": -0.31545046547898103,
+        "activeSaddles": 2,
+        "mappedPct": 81
+      }
+    },
+    {
+      "name": "Marcus",
+      "title": "The Hungry Romantic",
+      "code": "L2_UMpspYGOQiBPQ0J6KA",
+      "params": [
+        0.3125,
+        0.7925,
+        0.4225,
+        0.6475,
+        0.505,
+        0.555,
+        0.26,
+        0.125,
+        0.31,
+        0.2625,
+        0.2575,
+        0.47750000000000004,
+        0.155
+      ],
+      "summary": "This is someone who values exclusivity, prefers clearly defined relationships, and carries anxious or avoidant attachment patterns.",
+      "deviations": [],
+      "fieldStats": {
+        "minField": -0.6642916202545166,
+        "maxField": 0.21494099497795105,
+        "range": 0.8792326152324677,
+        "meanField": -0.08539381125108186,
+        "activeSaddles": 2,
+        "mappedPct": 60
+      }
+    },
+    {
+      "name": "Rin",
+      "title": "The Inner Fortress",
+      "code": "L2_cXllOrhnoZKkxL6fdA",
+      "params": [
+        0.44499999999999995,
+        0.475,
+        0.395,
+        0.2275,
+        0.7200000000000001,
+        0.40499999999999997,
+        0.63,
+        0.5725,
+        0.6449999999999999,
+        0.7699999999999999,
+        0.745,
+        0.625,
+        0.45499999999999996
+      ],
+      "summary": "This is someone who needs emotional grounding for physical intimacy, has a deep relationship with solitude, and engages conflict directly.",
+      "deviations": [
+        {
+          "param": "attachmentSecurity",
+          "index": 12,
+          "expected": "low (<0.35)",
+          "got": "45%",
+          "severity": "WARNING"
+        }
+      ],
+      "fieldStats": {
+        "minField": -0.881517231464386,
+        "maxField": 0.45506182312965393,
+        "range": 1.33657905459404,
+        "meanField": -0.15878758713239663,
+        "activeSaddles": 3,
+        "mappedPct": 76
+      }
+    },
+    {
+      "name": "Devi",
+      "title": "The Careful Romantic",
+      "code": "L2_0IlcJ9ezUliXq0JfhQ",
+      "params": [
+        0.8175000000000001,
+        0.5375,
+        0.36,
+        0.15250000000000002,
+        0.8425,
+        0.7000000000000001,
+        0.32,
+        0.34500000000000003,
+        0.5925,
+        0.6725000000000001,
+        0.2575,
+        0.37249999999999994,
+        0.5225
+      ],
+      "summary": "This is someone who values deep emotional friendships, values exclusivity, and needs emotional grounding for physical intimacy.",
+      "deviations": [
+        {
+          "param": "romanticLove",
+          "index": 1,
+          "expected": "high (>0.65)",
+          "got": "54%",
+          "severity": "WARNING"
+        }
+      ],
+      "fieldStats": {
+        "minField": -1.198974847793579,
+        "maxField": 0.5301443934440613,
+        "range": 1.7291192412376404,
+        "meanField": -0.15438817726326726,
+        "activeSaddles": 3,
+        "mappedPct": 74
+      }
+    },
+    {
+      "name": "James",
+      "title": "The Freefall Explorer",
+      "code": "L2_nD3J0TkyxdePZaG6mA",
+      "params": [
+        0.61,
+        0.24000000000000002,
+        0.7874999999999999,
+        0.82,
+        0.22250000000000003,
+        0.195,
+        0.7725,
+        0.8450000000000001,
+        0.5625,
+        0.39749999999999996,
+        0.6325,
+        0.73,
+        0.595
+      ],
+      "summary": "This is someone who orients toward relational openness, is comfortable in the tender middle, and sits comfortably with ambiguity.",
+      "deviations": [
+        {
+          "param": "mapped",
+          "index": 8,
+          "expected": "low (<0.35)",
+          "got": "56%",
+          "severity": "WARNING"
+        }
+      ],
+      "fieldStats": {
+        "minField": -1.009201169013977,
+        "maxField": 0.13211429119110107,
+        "range": 1.1413154602050781,
+        "meanField": -0.24463548134748472,
+        "activeSaddles": 3,
+        "mappedPct": 72
+      }
+    },
+    {
+      "name": "Sofia",
+      "title": "The Integrated Guide",
+      "code": "L2_yFbUjnhin6G6qKeZow",
+      "params": [
+        0.7825,
+        0.33749999999999997,
+        0.8325,
+        0.555,
+        0.47000000000000003,
+        0.38499999999999995,
+        0.6224999999999999,
+        0.6325000000000001,
+        0.7275,
+        0.66,
+        0.655,
+        0.6,
+        0.64
+      ],
+      "summary": "This is someone who values deep emotional friendships, is comfortable in the tender middle, and has mapped much of their relational landscape.",
+      "deviations": [],
+      "fieldStats": {
+        "minField": -1.2058775424957275,
+        "maxField": 0.3220721483230591,
+        "range": 1.5279496908187866,
+        "meanField": -0.27510605103515073,
+        "activeSaddles": 3,
+        "mappedPct": 80
+      }
+    },
+    {
+      "name": "Kai",
+      "title": "The Physical Poet",
+      "code": "L2_ZY7O2TNFpn2YeaHBeA",
+      "params": [
+        0.395,
+        0.555,
+        0.8074999999999999,
+        0.85,
+        0.2,
+        0.26999999999999996,
+        0.65,
+        0.48999999999999994,
+        0.595,
+        0.475,
+        0.6325,
+        0.755,
+        0.47250000000000003
+      ],
+      "summary": "This is someone who is comfortable in the tender middle, and connects through play and humor.",
+      "deviations": [],
+      "fieldStats": {
+        "minField": -0.7946203947067261,
+        "maxField": 0.12590943276882172,
+        "range": 0.9205298274755478,
+        "meanField": -0.23595641609394574,
+        "activeSaddles": 3,
+        "mappedPct": 74
+      }
+    },
+    {
+      "name": "Amara",
+      "title": "The Devoted Guardian",
+      "code": "L2_v6dUNNHIGiWAnFxagA",
+      "params": [
+        0.75,
+        0.6549999999999999,
+        0.3275,
+        0.20500000000000002,
+        0.8200000000000001,
+        0.7849999999999999,
+        0.1,
+        0.14500000000000002,
+        0.5,
+        0.61,
+        0.36250000000000004,
+        0.35250000000000004,
+        0.5
+      ],
+      "summary": "This is someone who values deep emotional friendships, values exclusivity, and needs emotional grounding for physical intimacy.",
+      "deviations": [
+        {
+          "param": "mapped",
+          "index": 8,
+          "expected": "high (>0.65)",
+          "got": "50%",
+          "severity": "WARNING"
+        }
+      ],
+      "fieldStats": {
+        "minField": -1.0933088064193726,
+        "maxField": 0.4652945399284363,
+        "range": 1.5586033463478088,
+        "meanField": -0.13244917070544127,
+        "activeSaddles": 2,
+        "mappedPct": 69
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "pair": "Elena + Marcus",
+      "why": "Secure-poly meets anxious-mono",
+      "totalDivergence": 5.675,
+      "divergentCount": 11,
+      "alignedCount": 1,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: friendship depth",
+          "text": "You differ in how deeply friendships go emotionally. Understanding what \"close friend\" means to each of you may reveal important expectations."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: ambiguous intimacy",
+          "text": "The tender space between friendship and romance feels different for each of you. This is worth exploring — it often holds unspoken assumptions."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exclusivity",
+          "text": "You have different relationships to exclusivity and openness. This is one of the most important conversations to have honestly."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: need for definition",
+          "text": "One of you needs more relational clarity than the other. Understanding this difference can prevent unnecessary anxiety."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exploration gap",
+          "text": "One of you has explored more relational territory than the other. This can create a helpful dynamic — or an uncomfortable one. Talk about it."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: alone time",
+          "text": "One of you draws more from solitude than the other. What feels like healthy space to one person can feel like withdrawal to the other."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: conflict styles",
+          "text": "You handle tension differently — one of you moves toward it while the other pulls back. Understanding this pattern is essential for navigating hard moments."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: attachment patterns",
+          "text": "Your attachment systems differ significantly. When one person feels anxious and the other withdraws, a painful cycle can emerge. Naming this pattern is the first step."
+        }
+      ],
+      "expectedDivergentMissed": [],
+      "expectedAlignedMissed": []
+    },
+    {
+      "pair": "Elena + Sofia",
+      "why": "Two secure, well-mapped people",
+      "totalDivergence": 1.5375000000000003,
+      "divergentCount": 0,
+      "alignedCount": 9,
+      "recommendations": [
+        {
+          "type": "shared",
+          "title": "Shared ground: deep friendships",
+          "text": "You both value emotional depth in friendships. This shared capacity is a foundation you can build on."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: the tender middle",
+          "text": "You both navigate the space between friendship and romance similarly. That ambiguous tenderness is comfortable territory for both of you."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: ambiguity tolerance",
+          "text": "You both handle relational ambiguity similarly — whether that means needing clarity or being comfortable with the undefined."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: self-knowledge",
+          "text": "You both have a similar sense of how well you know your own relational landscape."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: solitude",
+          "text": "You relate to alone time similarly. This alignment around solitude and self-connection reduces friction about \"needing space.\""
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: conflict style",
+          "text": "You navigate tension similarly. This shared instinct means fewer meta-conflicts about how to have conflicts."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: playfulness",
+          "text": "You share a similar appetite for lightness and humor in connection. This shared register makes everyday closeness easier."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: attachment wiring",
+          "text": "Your attachment systems respond similarly when connection feels threatened. This symmetry can create mutual understanding — or mutual spiraling."
+        }
+      ],
+      "expectedDivergentMissed": [],
+      "expectedAlignedMissed": []
+    },
+    {
+      "pair": "Marcus + Devi",
+      "why": "Both romantic-dominant, opposite physical comfort",
+      "totalDivergence": 3.245000000000001,
+      "divergentCount": 6,
+      "alignedCount": 5,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: friendship depth",
+          "text": "You differ in how deeply friendships go emotionally. Understanding what \"close friend\" means to each of you may reveal important expectations."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exploration gap",
+          "text": "One of you has explored more relational territory than the other. This can create a helpful dynamic — or an uncomfortable one. Talk about it."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: alone time",
+          "text": "One of you draws more from solitude than the other. What feels like healthy space to one person can feel like withdrawal to the other."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: attachment patterns",
+          "text": "Your attachment systems differ significantly. When one person feels anxious and the other withdraws, a painful cycle can emerge. Naming this pattern is the first step."
+        }
+      ],
+      "expectedDivergentMissed": [],
+      "expectedAlignedMissed": [
+        "romanticLove"
+      ]
+    },
+    {
+      "pair": "Rin + James",
+      "why": "Both high uncertainty tolerance, very different reasons",
+      "totalDivergence": 3.3200000000000003,
+      "divergentCount": 5,
+      "alignedCount": 5,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: ambiguous intimacy",
+          "text": "The tender space between friendship and romance feels different for each of you. This is worth exploring — it often holds unspoken assumptions."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exclusivity",
+          "text": "You have different relationships to exclusivity and openness. This is one of the most important conversations to have honestly."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: ambiguity tolerance",
+          "text": "You both handle relational ambiguity similarly — whether that means needing clarity or being comfortable with the undefined."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: self-knowledge",
+          "text": "You both have a similar sense of how well you know your own relational landscape."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: alone time",
+          "text": "One of you draws more from solitude than the other. What feels like healthy space to one person can feel like withdrawal to the other."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: conflict style",
+          "text": "You navigate tension similarly. This shared instinct means fewer meta-conflicts about how to have conflicts."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: playfulness",
+          "text": "You share a similar appetite for lightness and humor in connection. This shared register makes everyday closeness easier."
+        }
+      ],
+      "expectedDivergentMissed": [
+        "deepFriendships",
+        "attachmentSecurity"
+      ],
+      "expectedAlignedMissed": []
+    },
+    {
+      "pair": "Rin + Devi",
+      "why": "Avoidant meets conflict-avoidant",
+      "totalDivergence": 2.4574999999999996,
+      "divergentCount": 4,
+      "alignedCount": 7,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: friendship depth",
+          "text": "You differ in how deeply friendships go emotionally. Understanding what \"close friend\" means to each of you may reveal important expectations."
+        },
+        {
+          "type": "boundary",
+          "title": "Mutual boundary: physical grounding",
+          "text": "You share a similar need for emotional grounding in physical connection. This alignment creates safety."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: need for definition",
+          "text": "One of you needs more relational clarity than the other. Understanding this difference can prevent unnecessary anxiety."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: self-knowledge",
+          "text": "You both have a similar sense of how well you know your own relational landscape."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: solitude",
+          "text": "You relate to alone time similarly. This alignment around solitude and self-connection reduces friction about \"needing space.\""
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: conflict styles",
+          "text": "You handle tension differently — one of you moves toward it while the other pulls back. Understanding this pattern is essential for navigating hard moments."
+        }
+      ],
+      "expectedDivergentMissed": [
+        "casualTouch",
+        "playfulness"
+      ],
+      "expectedAlignedMissed": []
+    },
+    {
+      "pair": "James + Amara",
+      "why": "Freedom meets structure",
+      "totalDivergence": 5.207499999999999,
+      "divergentCount": 8,
+      "alignedCount": 3,
+      "recommendations": [
+        {
+          "type": "shared",
+          "title": "Shared ground: deep friendships",
+          "text": "You both value emotional depth in friendships. This shared capacity is a foundation you can build on."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: ambiguous intimacy",
+          "text": "The tender space between friendship and romance feels different for each of you. This is worth exploring — it often holds unspoken assumptions."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exclusivity",
+          "text": "You have different relationships to exclusivity and openness. This is one of the most important conversations to have honestly."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: need for definition",
+          "text": "One of you needs more relational clarity than the other. Understanding this difference can prevent unnecessary anxiety."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: levity vs. gravity",
+          "text": "One of you leans more on play and humor in connection, while the other gravitates toward seriousness. Neither is wrong, but misreading the register can create friction."
+        }
+      ],
+      "expectedDivergentMissed": [],
+      "expectedAlignedMissed": []
+    },
+    {
+      "pair": "Sofia + Kai",
+      "why": "Integrated meets physically-wired",
+      "totalDivergence": 2.1425,
+      "divergentCount": 2,
+      "alignedCount": 6,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: friendship depth",
+          "text": "You differ in how deeply friendships go emotionally. Understanding what \"close friend\" means to each of you may reveal important expectations."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: the tender middle",
+          "text": "You both navigate the space between friendship and romance similarly. That ambiguous tenderness is comfortable territory for both of you."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: ambiguity tolerance",
+          "text": "You both handle relational ambiguity similarly — whether that means needing clarity or being comfortable with the undefined."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: self-knowledge",
+          "text": "You both have a similar sense of how well you know your own relational landscape."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: conflict style",
+          "text": "You navigate tension similarly. This shared instinct means fewer meta-conflicts about how to have conflicts."
+        }
+      ],
+      "expectedDivergentMissed": [
+        "tenderMiddle"
+      ],
+      "expectedAlignedMissed": [
+        "playfulness"
+      ]
+    },
+    {
+      "pair": "Kai + Marcus",
+      "why": "Both physical, different attachment",
+      "totalDivergence": 3.7199999999999998,
+      "divergentCount": 9,
+      "alignedCount": 1,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: ambiguous intimacy",
+          "text": "The tender space between friendship and romance feels different for each of you. This is worth exploring — it often holds unspoken assumptions."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exclusivity",
+          "text": "You have different relationships to exclusivity and openness. This is one of the most important conversations to have honestly."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: need for definition",
+          "text": "One of you needs more relational clarity than the other. Understanding this difference can prevent unnecessary anxiety."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exploration gap",
+          "text": "One of you has explored more relational territory than the other. This can create a helpful dynamic — or an uncomfortable one. Talk about it."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: conflict styles",
+          "text": "You handle tension differently — one of you moves toward it while the other pulls back. Understanding this pattern is essential for navigating hard moments."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: levity vs. gravity",
+          "text": "One of you leans more on play and humor in connection, while the other gravitates toward seriousness. Neither is wrong, but misreading the register can create friction."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: attachment patterns",
+          "text": "Your attachment systems differ significantly. When one person feels anxious and the other withdraws, a painful cycle can emerge. Naming this pattern is the first step."
+        }
+      ],
+      "expectedDivergentMissed": [
+        "deepFriendships"
+      ],
+      "expectedAlignedMissed": [
+        "casualTouch"
+      ]
+    },
+    {
+      "pair": "Elena + Amara",
+      "why": "Open meets devoted-monogamous",
+      "totalDivergence": 5.460000000000001,
+      "divergentCount": 9,
+      "alignedCount": 0,
+      "recommendations": [
+        {
+          "type": "conversation",
+          "title": "Conversation: ambiguous intimacy",
+          "text": "The tender space between friendship and romance feels different for each of you. This is worth exploring — it often holds unspoken assumptions."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exclusivity",
+          "text": "You have different relationships to exclusivity and openness. This is one of the most important conversations to have honestly."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: need for definition",
+          "text": "One of you needs more relational clarity than the other. Understanding this difference can prevent unnecessary anxiety."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: conflict styles",
+          "text": "You handle tension differently — one of you moves toward it while the other pulls back. Understanding this pattern is essential for navigating hard moments."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: levity vs. gravity",
+          "text": "One of you leans more on play and humor in connection, while the other gravitates toward seriousness. Neither is wrong, but misreading the register can create friction."
+        }
+      ],
+      "expectedDivergentMissed": [],
+      "expectedAlignedMissed": [
+        "deepFriendships",
+        "mapped",
+        "selfIntimacy"
+      ]
+    },
+    {
+      "pair": "Devi + Sofia",
+      "why": "Conflict-avoidant meets conflict-direct",
+      "totalDivergence": 3.277500000000001,
+      "divergentCount": 7,
+      "alignedCount": 4,
+      "recommendations": [
+        {
+          "type": "shared",
+          "title": "Shared ground: deep friendships",
+          "text": "You both value emotional depth in friendships. This shared capacity is a foundation you can build on."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: ambiguous intimacy",
+          "text": "The tender space between friendship and romance feels different for each of you. This is worth exploring — it often holds unspoken assumptions."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: physical-emotional link",
+          "text": "You experience the connection between physical and emotional intimacy differently. Neither is wrong — but understanding the difference prevents hurt."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: exclusivity",
+          "text": "You have different relationships to exclusivity and openness. This is one of the most important conversations to have honestly."
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: need for definition",
+          "text": "One of you needs more relational clarity than the other. Understanding this difference can prevent unnecessary anxiety."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: self-knowledge",
+          "text": "You both have a similar sense of how well you know your own relational landscape."
+        },
+        {
+          "type": "shared",
+          "title": "Shared ground: solitude",
+          "text": "You relate to alone time similarly. This alignment around solitude and self-connection reduces friction about \"needing space.\""
+        },
+        {
+          "type": "conversation",
+          "title": "Conversation: conflict styles",
+          "text": "You handle tension differently — one of you moves toward it while the other pulls back. Understanding this pattern is essential for navigating hard moments."
+        }
+      ],
+      "expectedDivergentMissed": [],
+      "expectedAlignedMissed": [
+        "romanticLove"
+      ]
+    }
+  ],
+  "diagnostics": {
+    "rangeUtilization": [
+      {
+        "param": "deepFriendships",
+        "min": 31,
+        "max": 93,
+        "range": 62,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 93
+          },
+          {
+            "name": "Marcus",
+            "value": 31
+          },
+          {
+            "name": "Rin",
+            "value": 44
+          },
+          {
+            "name": "Devi",
+            "value": 82
+          },
+          {
+            "name": "James",
+            "value": 61
+          },
+          {
+            "name": "Sofia",
+            "value": 78
+          },
+          {
+            "name": "Kai",
+            "value": 40
+          },
+          {
+            "name": "Amara",
+            "value": 75
+          }
+        ]
+      },
+      {
+        "param": "romanticLove",
+        "min": 11,
+        "max": 79,
+        "range": 68,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 11
+          },
+          {
+            "name": "Marcus",
+            "value": 79
+          },
+          {
+            "name": "Rin",
+            "value": 48
+          },
+          {
+            "name": "Devi",
+            "value": 54
+          },
+          {
+            "name": "James",
+            "value": 24
+          },
+          {
+            "name": "Sofia",
+            "value": 34
+          },
+          {
+            "name": "Kai",
+            "value": 56
+          },
+          {
+            "name": "Amara",
+            "value": 65
+          }
+        ]
+      },
+      {
+        "param": "tenderMiddle",
+        "min": 33,
+        "max": 84,
+        "range": 52,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 84
+          },
+          {
+            "name": "Marcus",
+            "value": 42
+          },
+          {
+            "name": "Rin",
+            "value": 40
+          },
+          {
+            "name": "Devi",
+            "value": 36
+          },
+          {
+            "name": "James",
+            "value": 79
+          },
+          {
+            "name": "Sofia",
+            "value": 83
+          },
+          {
+            "name": "Kai",
+            "value": 81
+          },
+          {
+            "name": "Amara",
+            "value": 33
+          }
+        ]
+      },
+      {
+        "param": "casualTouch",
+        "min": 15,
+        "max": 85,
+        "range": 70,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 79
+          },
+          {
+            "name": "Marcus",
+            "value": 65
+          },
+          {
+            "name": "Rin",
+            "value": 23
+          },
+          {
+            "name": "Devi",
+            "value": 15
+          },
+          {
+            "name": "James",
+            "value": 82
+          },
+          {
+            "name": "Sofia",
+            "value": 56
+          },
+          {
+            "name": "Kai",
+            "value": 85
+          },
+          {
+            "name": "Amara",
+            "value": 21
+          }
+        ]
+      },
+      {
+        "param": "emptyPhysBarrier",
+        "min": 20,
+        "max": 84,
+        "range": 64,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 22
+          },
+          {
+            "name": "Marcus",
+            "value": 51
+          },
+          {
+            "name": "Rin",
+            "value": 72
+          },
+          {
+            "name": "Devi",
+            "value": 84
+          },
+          {
+            "name": "James",
+            "value": 22
+          },
+          {
+            "name": "Sofia",
+            "value": 47
+          },
+          {
+            "name": "Kai",
+            "value": 20
+          },
+          {
+            "name": "Amara",
+            "value": 82
+          }
+        ]
+      },
+      {
+        "param": "ungroundedBarrier",
+        "min": 20,
+        "max": 78,
+        "range": 59,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 28
+          },
+          {
+            "name": "Marcus",
+            "value": 56
+          },
+          {
+            "name": "Rin",
+            "value": 41
+          },
+          {
+            "name": "Devi",
+            "value": 70
+          },
+          {
+            "name": "James",
+            "value": 20
+          },
+          {
+            "name": "Sofia",
+            "value": 38
+          },
+          {
+            "name": "Kai",
+            "value": 27
+          },
+          {
+            "name": "Amara",
+            "value": 78
+          }
+        ]
+      },
+      {
+        "param": "uncertaintyTolerance",
+        "min": 10,
+        "max": 77,
+        "range": 67,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 69
+          },
+          {
+            "name": "Marcus",
+            "value": 26
+          },
+          {
+            "name": "Rin",
+            "value": 63
+          },
+          {
+            "name": "Devi",
+            "value": 32
+          },
+          {
+            "name": "James",
+            "value": 77
+          },
+          {
+            "name": "Sofia",
+            "value": 62
+          },
+          {
+            "name": "Kai",
+            "value": 65
+          },
+          {
+            "name": "Amara",
+            "value": 10
+          }
+        ]
+      },
+      {
+        "param": "openness",
+        "min": 13,
+        "max": 89,
+        "range": 77,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 89
+          },
+          {
+            "name": "Marcus",
+            "value": 13
+          },
+          {
+            "name": "Rin",
+            "value": 57
+          },
+          {
+            "name": "Devi",
+            "value": 35
+          },
+          {
+            "name": "James",
+            "value": 85
+          },
+          {
+            "name": "Sofia",
+            "value": 63
+          },
+          {
+            "name": "Kai",
+            "value": 49
+          },
+          {
+            "name": "Amara",
+            "value": 15
+          }
+        ]
+      },
+      {
+        "param": "mapped",
+        "min": 31,
+        "max": 75,
+        "range": 44,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 75
+          },
+          {
+            "name": "Marcus",
+            "value": 31
+          },
+          {
+            "name": "Rin",
+            "value": 64
+          },
+          {
+            "name": "Devi",
+            "value": 59
+          },
+          {
+            "name": "James",
+            "value": 56
+          },
+          {
+            "name": "Sofia",
+            "value": 73
+          },
+          {
+            "name": "Kai",
+            "value": 60
+          },
+          {
+            "name": "Amara",
+            "value": 50
+          }
+        ]
+      },
+      {
+        "param": "selfIntimacy",
+        "min": 26,
+        "max": 78,
+        "range": 52,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 78
+          },
+          {
+            "name": "Marcus",
+            "value": 26
+          },
+          {
+            "name": "Rin",
+            "value": 77
+          },
+          {
+            "name": "Devi",
+            "value": 67
+          },
+          {
+            "name": "James",
+            "value": 40
+          },
+          {
+            "name": "Sofia",
+            "value": 66
+          },
+          {
+            "name": "Kai",
+            "value": 48
+          },
+          {
+            "name": "Amara",
+            "value": 61
+          }
+        ]
+      },
+      {
+        "param": "conflictApproach",
+        "min": 26,
+        "max": 75,
+        "range": 49,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 66
+          },
+          {
+            "name": "Marcus",
+            "value": 26
+          },
+          {
+            "name": "Rin",
+            "value": 75
+          },
+          {
+            "name": "Devi",
+            "value": 26
+          },
+          {
+            "name": "James",
+            "value": 63
+          },
+          {
+            "name": "Sofia",
+            "value": 66
+          },
+          {
+            "name": "Kai",
+            "value": 63
+          },
+          {
+            "name": "Amara",
+            "value": 36
+          }
+        ]
+      },
+      {
+        "param": "playfulness",
+        "min": 35,
+        "max": 76,
+        "range": 40,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 64
+          },
+          {
+            "name": "Marcus",
+            "value": 48
+          },
+          {
+            "name": "Rin",
+            "value": 63
+          },
+          {
+            "name": "Devi",
+            "value": 37
+          },
+          {
+            "name": "James",
+            "value": 73
+          },
+          {
+            "name": "Sofia",
+            "value": 60
+          },
+          {
+            "name": "Kai",
+            "value": 76
+          },
+          {
+            "name": "Amara",
+            "value": 35
+          }
+        ]
+      },
+      {
+        "param": "attachmentSecurity",
+        "min": 16,
+        "max": 70,
+        "range": 54,
+        "flag": "OK",
+        "values": [
+          {
+            "name": "Elena",
+            "value": 70
+          },
+          {
+            "name": "Marcus",
+            "value": 16
+          },
+          {
+            "name": "Rin",
+            "value": 45
+          },
+          {
+            "name": "Devi",
+            "value": 52
+          },
+          {
+            "name": "James",
+            "value": 60
+          },
+          {
+            "name": "Sofia",
+            "value": 64
+          },
+          {
+            "name": "Kai",
+            "value": 47
+          },
+          {
+            "name": "Amara",
+            "value": 50
+          }
+        ]
+      }
+    ],
+    "correlations": [
+      {
+        "paramA": "deepFriendships",
+        "paramB": "attachmentSecurity",
+        "r": "0.80",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "romanticLove",
+        "paramB": "tenderMiddle",
+        "r": "-0.72",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "romanticLove",
+        "paramB": "uncertaintyTolerance",
+        "r": "-0.78",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "romanticLove",
+        "paramB": "openness",
+        "r": "-0.96",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "romanticLove",
+        "paramB": "mapped",
+        "r": "-0.81",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "romanticLove",
+        "paramB": "attachmentSecurity",
+        "r": "-0.87",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "tenderMiddle",
+        "paramB": "casualTouch",
+        "r": "0.84",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "tenderMiddle",
+        "paramB": "emptyPhysBarrier",
+        "r": "-0.90",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "tenderMiddle",
+        "paramB": "ungroundedBarrier",
+        "r": "-0.85",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "tenderMiddle",
+        "paramB": "uncertaintyTolerance",
+        "r": "0.80",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "tenderMiddle",
+        "paramB": "openness",
+        "r": "0.78",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "tenderMiddle",
+        "paramB": "playfulness",
+        "r": "0.80",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "casualTouch",
+        "paramB": "emptyPhysBarrier",
+        "r": "-0.98",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "casualTouch",
+        "paramB": "ungroundedBarrier",
+        "r": "-0.81",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "casualTouch",
+        "paramB": "playfulness",
+        "r": "0.77",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "emptyPhysBarrier",
+        "paramB": "ungroundedBarrier",
+        "r": "0.88",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "emptyPhysBarrier",
+        "paramB": "uncertaintyTolerance",
+        "r": "-0.74",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "emptyPhysBarrier",
+        "paramB": "playfulness",
+        "r": "-0.85",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "ungroundedBarrier",
+        "paramB": "uncertaintyTolerance",
+        "r": "-0.95",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "ungroundedBarrier",
+        "paramB": "openness",
+        "r": "-0.84",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "ungroundedBarrier",
+        "paramB": "conflictApproach",
+        "r": "-0.80",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "ungroundedBarrier",
+        "paramB": "playfulness",
+        "r": "-0.97",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "uncertaintyTolerance",
+        "paramB": "openness",
+        "r": "0.92",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "uncertaintyTolerance",
+        "paramB": "conflictApproach",
+        "r": "0.87",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "uncertaintyTolerance",
+        "paramB": "playfulness",
+        "r": "0.92",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "openness",
+        "paramB": "mapped",
+        "r": "0.76",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "openness",
+        "paramB": "conflictApproach",
+        "r": "0.80",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "openness",
+        "paramB": "playfulness",
+        "r": "0.74",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "openness",
+        "paramB": "attachmentSecurity",
+        "r": "0.75",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "mapped",
+        "paramB": "selfIntimacy",
+        "r": "0.81",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "mapped",
+        "paramB": "conflictApproach",
+        "r": "0.71",
+        "flag": "MODERATE"
+      },
+      {
+        "paramA": "mapped",
+        "paramB": "attachmentSecurity",
+        "r": "0.89",
+        "flag": "HIGH"
+      },
+      {
+        "paramA": "conflictApproach",
+        "paramB": "playfulness",
+        "r": "0.82",
+        "flag": "MODERATE"
+      }
+    ],
+    "recommendationCoverage": {
+      "uniqueFired": 19,
+      "titles": [
+        "Conversation: friendship depth",
+        "Conversation: ambiguous intimacy",
+        "Conversation: physical-emotional link",
+        "Conversation: exclusivity",
+        "Conversation: need for definition",
+        "Conversation: exploration gap",
+        "Conversation: alone time",
+        "Conversation: conflict styles",
+        "Conversation: attachment patterns",
+        "Shared ground: deep friendships",
+        "Shared ground: the tender middle",
+        "Shared ground: ambiguity tolerance",
+        "Shared ground: self-knowledge",
+        "Shared ground: solitude",
+        "Shared ground: conflict style",
+        "Shared ground: playfulness",
+        "Shared ground: attachment wiring",
+        "Mutual boundary: physical grounding",
+        "Conversation: levity vs. gravity"
+      ]
+    },
+    "recCountByPair": [
+      {
+        "pair": "Elena + Marcus",
+        "count": 9,
+        "titles": [
+          "Conversation: friendship depth",
+          "Conversation: ambiguous intimacy",
+          "Conversation: physical-emotional link",
+          "Conversation: exclusivity",
+          "Conversation: need for definition",
+          "Conversation: exploration gap",
+          "Conversation: alone time",
+          "Conversation: conflict styles",
+          "Conversation: attachment patterns"
+        ]
+      },
+      {
+        "pair": "Elena + Sofia",
+        "count": 8,
+        "titles": [
+          "Shared ground: deep friendships",
+          "Shared ground: the tender middle",
+          "Shared ground: ambiguity tolerance",
+          "Shared ground: self-knowledge",
+          "Shared ground: solitude",
+          "Shared ground: conflict style",
+          "Shared ground: playfulness",
+          "Shared ground: attachment wiring"
+        ]
+      },
+      {
+        "pair": "Rin + James",
+        "count": 8,
+        "titles": [
+          "Conversation: ambiguous intimacy",
+          "Conversation: physical-emotional link",
+          "Conversation: exclusivity",
+          "Shared ground: ambiguity tolerance",
+          "Shared ground: self-knowledge",
+          "Conversation: alone time",
+          "Shared ground: conflict style",
+          "Shared ground: playfulness"
+        ]
+      },
+      {
+        "pair": "Kai + Marcus",
+        "count": 8,
+        "titles": [
+          "Conversation: ambiguous intimacy",
+          "Conversation: physical-emotional link",
+          "Conversation: exclusivity",
+          "Conversation: need for definition",
+          "Conversation: exploration gap",
+          "Conversation: conflict styles",
+          "Conversation: levity vs. gravity",
+          "Conversation: attachment patterns"
+        ]
+      },
+      {
+        "pair": "Devi + Sofia",
+        "count": 8,
+        "titles": [
+          "Shared ground: deep friendships",
+          "Conversation: ambiguous intimacy",
+          "Conversation: physical-emotional link",
+          "Conversation: exclusivity",
+          "Conversation: need for definition",
+          "Shared ground: self-knowledge",
+          "Shared ground: solitude",
+          "Conversation: conflict styles"
+        ]
+      },
+      {
+        "pair": "Rin + Devi",
+        "count": 6,
+        "titles": [
+          "Conversation: friendship depth",
+          "Mutual boundary: physical grounding",
+          "Conversation: need for definition",
+          "Shared ground: self-knowledge",
+          "Shared ground: solitude",
+          "Conversation: conflict styles"
+        ]
+      },
+      {
+        "pair": "James + Amara",
+        "count": 6,
+        "titles": [
+          "Shared ground: deep friendships",
+          "Conversation: ambiguous intimacy",
+          "Conversation: physical-emotional link",
+          "Conversation: exclusivity",
+          "Conversation: need for definition",
+          "Conversation: levity vs. gravity"
+        ]
+      },
+      {
+        "pair": "Elena + Amara",
+        "count": 6,
+        "titles": [
+          "Conversation: ambiguous intimacy",
+          "Conversation: physical-emotional link",
+          "Conversation: exclusivity",
+          "Conversation: need for definition",
+          "Conversation: conflict styles",
+          "Conversation: levity vs. gravity"
+        ]
+      },
+      {
+        "pair": "Marcus + Devi",
+        "count": 5,
+        "titles": [
+          "Conversation: friendship depth",
+          "Conversation: physical-emotional link",
+          "Conversation: exploration gap",
+          "Conversation: alone time",
+          "Conversation: attachment patterns"
+        ]
+      },
+      {
+        "pair": "Sofia + Kai",
+        "count": 5,
+        "titles": [
+          "Conversation: friendship depth",
+          "Shared ground: the tender middle",
+          "Shared ground: ambiguity tolerance",
+          "Shared ground: self-knowledge",
+          "Shared ground: conflict style"
+        ]
+      }
+    ],
+    "flatteningFlags": []
+  }
+}
