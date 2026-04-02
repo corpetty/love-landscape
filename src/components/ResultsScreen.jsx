@@ -17,6 +17,8 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
   const [partnerError, setPartnerError] = useState('');
   const [view, setView] = useState('yours');
   const [confirmReset, setConfirmReset] = useState(false);
+  // AI reading text — lifted so ResearchContribution can offer to include it
+  const [aiReading, setAiReading] = useState('');
 
   function loadPartner() {
     const p = decodeParams(partnerCode);
@@ -129,6 +131,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
         params={view === 'theirs' && partnerParams ? partnerParams : params}
         contextAnswers={contextAnswers}
         onOpenSettings={onOpenSettings}
+        onReadingGenerated={setAiReading}
       />
 
       {/* Partner import */}
@@ -173,11 +176,12 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           params={params}
           partnerParams={partnerParams}
           onOpenSettings={onOpenSettings}
+          onReadingGenerated={(text) => setAiReading((prev) => prev ? `${prev}\n\n---\n\n${text}` : text)}
         />
       )}
 
       {/* Research contribution */}
-      <ResearchContribution params={params} />
+      <ResearchContribution params={params} aiReading={aiReading} />
 
       {/* Reset */}
       <div style={{ textAlign: 'center', marginTop: '2.5rem', paddingBottom: '1rem' }}>

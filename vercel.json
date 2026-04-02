@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 30
+    },
+    "api/credits.js": {
+      "maxDuration": 10
+    },
+    "api/checkout.js": {
+      "maxDuration": 10
+    },
+    "api/webhook.js": {
+      "maxDuration": 10
+    }
+  }
+}

@@ -1,11 +1,11 @@
--- Love Landscape: Full database schema
--- Run this in a fresh Supabase project (or apply migrations/ incrementally)
+-- Migration 001: Managed LLM credit system + full 13-param submissions
+-- Run in your Supabase SQL Editor
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Reading sessions — tracks managed LLM credit balance per anonymous browser session
+-- 1. Reading sessions (managed LLM credit tracking)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE reading_sessions (
+CREATE TABLE IF NOT EXISTS reading_sessions (
   session_id        UUID PRIMARY KEY,
   created_at        TIMESTAMPTZ DEFAULT now(),
   free_credits      INT NOT NULL DEFAULT 5,
@@ -13,75 +13,44 @@ CREATE TABLE reading_sessions (
   credits_purchased INT NOT NULL DEFAULT 0
 );
 
--- Only API functions (service role) interact with this table
+-- Service role manages this table; no anon access needed
 ALTER TABLE reading_sessions ENABLE ROW LEVEL SECURITY;
+-- (No anon policies — only the API functions use the service role key)
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Submissions — anonymous research contribution
+-- 2. Expand submissions: add 4 missing parameters
 -- ─────────────────────────────────────────────────────────────────────────────
 
-CREATE TABLE submissions (
-  id         UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  created_at TIMESTAMPTZ DEFAULT now(),
-
-  -- All 13 terrain parameters (0-1)
-  p_deep_friendships      REAL NOT NULL CHECK (p_deep_friendships      BETWEEN 0 AND 1),
-  p_romantic_love         REAL NOT NULL CHECK (p_romantic_love         BETWEEN 0 AND 1),
-  p_tender_middle         REAL NOT NULL CHECK (p_tender_middle         BETWEEN 0 AND 1),
-  p_casual_touch          REAL NOT NULL CHECK (p_casual_touch          BETWEEN 0 AND 1),
-  p_empty_phys_barrier    REAL NOT NULL CHECK (p_empty_phys_barrier    BETWEEN 0 AND 1),
-  p_ungrounded_barrier    REAL NOT NULL CHECK (p_ungrounded_barrier    BETWEEN 0 AND 1),
-  p_uncertainty_tolerance REAL NOT NULL CHECK (p_uncertainty_tolerance BETWEEN 0 AND 1),
-  p_openness              REAL NOT NULL CHECK (p_openness              BETWEEN 0 AND 1),
-  p_mapped                REAL NOT NULL CHECK (p_mapped                BETWEEN 0 AND 1),
-  p_self_intimacy         REAL NOT NULL CHECK (p_self_intimacy         BETWEEN 0 AND 1),
-  p_conflict_approach     REAL NOT NULL CHECK (p_conflict_approach     BETWEEN 0 AND 1),
-  p_playfulness           REAL NOT NULL CHECK (p_playfulness           BETWEEN 0 AND 1),
-  p_attachment_security   REAL NOT NULL CHECK (p_attachment_security   BETWEEN 0 AND 1),
-
-  -- Core optional demographics
-  age_range             TEXT CHECK (age_range IS NULL OR age_range IN ('18-25', '26-35', '36-45', '46-55', '56+')),
-  relationship_structure TEXT CHECK (relationship_structure IS NULL OR relationship_structure IN (
-    'monogamous', 'enm-polyamorous', 'single-exploring', 'other'
-  )),
-  gender_identity       TEXT, -- free text, max 100 chars enforced client-side
-
-  -- Extended optional demographics
-  attachment_style      TEXT CHECK (attachment_style IS NULL OR attachment_style IN (
-    'secure', 'anxious', 'avoidant', 'fearful-avoidant'
-  )),
-  relationship_count    TEXT CHECK (relationship_count IS NULL OR relationship_count IN (
-    'exploring', '1-2', '3-5', '6+'
-  )),
-
-  -- Optional AI reading (with explicit consent)
-  ai_reading_text       TEXT,
-  ai_reading_consented  BOOLEAN DEFAULT FALSE
-);
-
--- RLS: anonymous inserts allowed, no direct reads
-ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Allow anonymous inserts"
-  ON submissions FOR INSERT
-  TO anon
-  WITH CHECK (true);
-
--- No SELECT policy for anon — reads happen through RPC functions only
+ALTER TABLE submissions
+  ADD COLUMN IF NOT EXISTS p_self_intimacy       REAL NOT NULL DEFAULT 0.5
+    CHECK (p_self_intimacy BETWEEN 0 AND 1),
+  ADD COLUMN IF NOT EXISTS p_conflict_approach   REAL NOT NULL DEFAULT 0.5
+    CHECK (p_conflict_approach BETWEEN 0 AND 1),
+  ADD COLUMN IF NOT EXISTS p_playfulness         REAL NOT NULL DEFAULT 0.5
+    CHECK (p_playfulness BETWEEN 0 AND 1),
+  ADD COLUMN IF NOT EXISTS p_attachment_security REAL NOT NULL DEFAULT 0.5
+    CHECK (p_attachment_security BETWEEN 0 AND 1);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Aggregate RPC functions (callable with anon key — return aggregates only)
+-- 3. Expand submissions: richer optional demographics
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Total count
-CREATE OR REPLACE FUNCTION get_submission_count()
-RETURNS INTEGER
-LANGUAGE sql SECURITY DEFINER STABLE
-AS $$
-  SELECT count(*)::integer FROM submissions;
-$$;
+ALTER TABLE submissions
+  ADD COLUMN IF NOT EXISTS attachment_style TEXT
+    CHECK (attachment_style IS NULL OR attachment_style IN (
+      'secure', 'anxious', 'avoidant', 'fearful-avoidant'
+    )),
+  ADD COLUMN IF NOT EXISTS relationship_count TEXT
+    CHECK (relationship_count IS NULL OR relationship_count IN (
+      'exploring', '1-2', '3-5', '6+'
+    )),
+  ADD COLUMN IF NOT EXISTS ai_reading_text      TEXT,
+  ADD COLUMN IF NOT EXISTS ai_reading_consented BOOLEAN DEFAULT FALSE;
 
--- Parameter means (all 13)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 4. Update aggregate RPC functions to include all 13 parameters
+-- ─────────────────────────────────────────────────────────────────────────────
+
 CREATE OR REPLACE FUNCTION get_param_means()
 RETURNS TABLE (
   p_deep_friendships      REAL,
@@ -101,17 +70,23 @@ RETURNS TABLE (
 LANGUAGE sql SECURITY DEFINER STABLE
 AS $$
   SELECT
-    avg(p_deep_friendships)::real,      avg(p_romantic_love)::real,
-    avg(p_tender_middle)::real,         avg(p_casual_touch)::real,
-    avg(p_empty_phys_barrier)::real,    avg(p_ungrounded_barrier)::real,
-    avg(p_uncertainty_tolerance)::real, avg(p_openness)::real,
-    avg(p_mapped)::real,                avg(p_self_intimacy)::real,
-    avg(p_conflict_approach)::real,     avg(p_playfulness)::real,
+    avg(p_deep_friendships)::real,
+    avg(p_romantic_love)::real,
+    avg(p_tender_middle)::real,
+    avg(p_casual_touch)::real,
+    avg(p_empty_phys_barrier)::real,
+    avg(p_ungrounded_barrier)::real,
+    avg(p_uncertainty_tolerance)::real,
+    avg(p_openness)::real,
+    avg(p_mapped)::real,
+    avg(p_self_intimacy)::real,
+    avg(p_conflict_approach)::real,
+    avg(p_playfulness)::real,
     avg(p_attachment_security)::real
   FROM submissions;
 $$;
 
--- Histogram for any of the 13 parameters (10 bins, 0.1 width)
+-- Update histogram to allow all 13 params
 CREATE OR REPLACE FUNCTION get_param_histogram(param_name TEXT)
 RETURNS TABLE (bin_start REAL, bin_end REAL, count INTEGER)
 LANGUAGE plpgsql SECURITY DEFINER STABLE
@@ -140,7 +115,7 @@ BEGIN
 END;
 $$;
 
--- Demographic breakdowns
+-- Expand demographic breakdown to include new fields
 CREATE OR REPLACE FUNCTION get_demographic_breakdown(field TEXT)
 RETURNS TABLE (value TEXT, count INTEGER)
 LANGUAGE plpgsql SECURITY DEFINER STABLE
@@ -163,7 +138,7 @@ BEGIN
 END;
 $$;
 
--- How many people consented to share AI readings
+-- Reading consent summary (for research transparency)
 CREATE OR REPLACE FUNCTION get_reading_consent_count()
 RETURNS INTEGER
 LANGUAGE sql SECURITY DEFINER STABLE
@@ -171,9 +146,7 @@ AS $$
   SELECT count(*)::integer FROM submissions WHERE ai_reading_consented = TRUE;
 $$;
 
--- Grant execute to anon role
-GRANT EXECUTE ON FUNCTION get_submission_count       TO anon;
-GRANT EXECUTE ON FUNCTION get_param_means            TO anon;
-GRANT EXECUTE ON FUNCTION get_param_histogram        TO anon;
-GRANT EXECUTE ON FUNCTION get_demographic_breakdown  TO anon;
-GRANT EXECUTE ON FUNCTION get_reading_consent_count  TO anon;
+GRANT EXECUTE ON FUNCTION get_param_means TO anon;
+GRANT EXECUTE ON FUNCTION get_param_histogram TO anon;
+GRANT EXECUTE ON FUNCTION get_demographic_breakdown TO anon;
+GRANT EXECUTE ON FUNCTION get_reading_consent_count TO anon;
