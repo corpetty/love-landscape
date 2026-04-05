@@ -9,13 +9,7 @@ export default function AssessmentScreen({ onComplete, onBack }) {
   const [fadeClass, setFadeClass] = useState('fade-in');
   const containerRef = useRef(null);
 
-  // Show AI primer before the first question
-  if (showIntro) {
-    return <AssessmentIntro onStart={() => setShowIntro(false)} onBack={onBack} />;
-  }
-
-  const q = questions[current];
-  const progress = (current + 1) / questions.length;
+  const q = showIntro ? null : questions[current];
 
   function setAnswer(value) {
     setAnswers((prev) => ({ ...prev, [q.id]: value }));
@@ -46,8 +40,9 @@ export default function AssessmentScreen({ onComplete, onBack }) {
     else if (onBack) onBack();
   }
 
-  // Keyboard navigation
+  // Keyboard navigation — must be declared before any early returns
   useEffect(() => {
+    if (showIntro || !q) return;
     function onKey(e) {
       if (e.key === 'Enter' && !(q.type === 'scenario' && answers[q.id] === undefined)) {
         next();
@@ -56,6 +51,13 @@ export default function AssessmentScreen({ onComplete, onBack }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
+
+  // Early return after all hooks
+  if (showIntro) {
+    return <AssessmentIntro onStart={() => setShowIntro(false)} onBack={onBack} />;
+  }
+
+  const progress = (current + 1) / questions.length;
 
   const currentAnswer = answers[q.id];
   const currentContext = contextAnswers[q.id] || '';
