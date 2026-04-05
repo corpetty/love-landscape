@@ -1,24 +1,24 @@
 /**
  * api/chat.js — Managed LLM proxy for Love Landscape
  *
- * Vercel serverless function. Proxies requests to Anthropic, enforces
+ * Vercel serverless function. Proxies requests to OpenRouter, enforces
  * per-session credit limits, and returns credits remaining to the client.
  *
  * Required env vars (set in Vercel project settings):
- *   ANTHROPIC_API_KEY       — Anthropic API key
- *   SUPABASE_URL            — Same as VITE_SUPABASE_URL
+ *   OPENROUTER_API_KEY        — OpenRouter API key (sk-or-...)
+ *   SUPABASE_URL              — Same as VITE_SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY — Supabase service role key (bypasses RLS)
  *
  * Optional:
- *   MANAGED_MODEL_FAST      — Model for param adjustment (default: claude-haiku-4-5)
- *   MANAGED_MODEL_QUALITY   — Model for narrative/pair readings (default: claude-sonnet-4-5)
- *   FREE_CREDITS            — Free credits per new session (default: 5)
+ *   MANAGED_MODEL_FAST    — Model for param adjustment (default: anthropic/claude-haiku-4-5)
+ *   MANAGED_MODEL_QUALITY — Model for narrative/pair readings (default: anthropic/claude-sonnet-4-5)
+ *   FREE_CREDITS          — Free credits per new session (default: 5)
  */
 
 const { createClient } = require('@supabase/supabase-js');
 
-const MODEL_FAST    = process.env.MANAGED_MODEL_FAST    || 'claude-haiku-4-5';
-const MODEL_QUALITY = process.env.MANAGED_MODEL_QUALITY || 'claude-sonnet-4-5';
+const MODEL_FAST    = process.env.MANAGED_MODEL_FAST    || 'anthropic/claude-haiku-4-5';
+const MODEL_QUALITY = process.env.MANAGED_MODEL_QUALITY || 'anthropic/claude-sonnet-4-5';
 const FREE_CREDITS  = parseInt(process.env.FREE_CREDITS || '5', 10);
 
 function getSupabase() {
@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
   if (!sessionId) {
     return res.status(400).json({ error: 'Missing sessionId' });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENROUTER_API_KEY) {
     return res.status(503).json({ error: 'AI service not configured' });
   }
 
@@ -91,7 +91,7 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  // Optimistically deduct credit before calling Anthropic
+  // Optimistically deduct credit before calling OpenRouter
   await supabase
     .from('reading_sessions')
     .update({ readings_used: session.readings_used + 1 })
@@ -100,20 +100,23 @@ module.exports = async function handler(req, res) {
   // Choose model based on call type
   const model = callType === 'adjust' ? MODEL_FAST : MODEL_QUALITY;
 
-  let anthropicResponse;
+  let orResponse;
   try {
-    anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
+    orResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://love-landscape.com',
+        'X-Title': 'Love Landscape',
       },
       body: JSON.stringify({
         model,
         max_tokens: callType === 'adjust' ? 512 : 1024,
-        system: systemMessage,
-        messages: [{ role: 'user', content: userMessage }],
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user',   content: userMessage },
+        ],
       }),
     });
   } catch (err) {
@@ -125,18 +128,18 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ error: 'Could not reach AI service. Please try again.' });
   }
 
-  if (!anthropicResponse.ok) {
+  if (!orResponse.ok) {
     // API error — refund the credit
     await supabase
       .from('reading_sessions')
       .update({ readings_used: session.readings_used })
       .eq('session_id', sessionId);
-    const errText = await anthropicResponse.text().catch(() => '');
+    const errText = await orResponse.text().catch(() => '');
     return res.status(502).json({ error: 'AI service error. Please try again.', detail: errText.slice(0, 200) });
   }
 
-  const aiData = await anthropicResponse.json();
-  const content = aiData.content?.[0]?.text || '';
+  const aiData = await orResponse.json();
+  const content = aiData.choices?.[0]?.message?.content || '';
 
   return res.status(200).json({
     content,
