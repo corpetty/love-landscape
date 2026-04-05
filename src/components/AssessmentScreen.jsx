@@ -2,11 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { questions } from '../data/questions.js';
 
 export default function AssessmentScreen({ onComplete, onBack }) {
+  const [showIntro, setShowIntro] = useState(true);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
   const [contextAnswers, setContextAnswers] = useState({});
   const [fadeClass, setFadeClass] = useState('fade-in');
   const containerRef = useRef(null);
+
+  // Show AI primer before the first question
+  if (showIntro) {
+    return <AssessmentIntro onStart={() => setShowIntro(false)} onBack={onBack} />;
+  }
 
   const q = questions[current];
   const progress = (current + 1) / questions.length;
@@ -103,12 +109,22 @@ export default function AssessmentScreen({ onComplete, onBack }) {
           />
         )}
 
-        {/* Context textarea */}
+        {/* Context textarea — feeds AI refinement */}
         <div style={{ marginTop: '1.25rem' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '0.75rem',
+            color: 'var(--color-accent)',
+            marginBottom: '0.3rem',
+            opacity: 0.8,
+            letterSpacing: '0.03em',
+          }}>
+            AI context — optional
+          </label>
           <textarea
             value={currentContext}
             onChange={(e) => setContext(e.target.value)}
-            placeholder="Anything you'd like to add about your answer? (optional)"
+            placeholder="Share anything a slider can't capture — a specific memory, an exception, a pattern you've noticed…"
             rows={2}
             style={{
               width: '100%',
@@ -122,10 +138,16 @@ export default function AssessmentScreen({ onComplete, onBack }) {
               resize: 'vertical',
               fontFamily: 'inherit',
               opacity: 0.7,
-              transition: 'opacity 0.15s',
+              transition: 'opacity 0.15s, border-color 0.15s',
             }}
-            onFocus={(e) => { e.currentTarget.style.opacity = '1'; }}
-            onBlur={(e) => { if (!e.currentTarget.value) e.currentTarget.style.opacity = '0.7'; }}
+            onFocus={(e) => {
+              e.currentTarget.style.opacity = '1';
+              e.currentTarget.style.borderColor = 'rgba(127,119,221,0.4)';
+            }}
+            onBlur={(e) => {
+              if (!e.currentTarget.value) e.currentTarget.style.opacity = '0.7';
+              e.currentTarget.style.borderColor = 'var(--color-border)';
+            }}
           />
         </div>
       </div>
@@ -177,6 +199,74 @@ function SliderInput({ value, onChange, left, right }) {
       }}>
         <span>{left}</span>
         <span>{right}</span>
+      </div>
+    </div>
+  );
+}
+
+function AssessmentIntro({ onStart, onBack }) {
+  return (
+    <div style={{ maxWidth: '520px', margin: '0 auto', paddingTop: '3rem' }}>
+      <h2 style={{ fontSize: '1.4rem', marginBottom: '1.25rem' }}>
+        Before you begin
+      </h2>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+        <InfoRow
+          step="1"
+          title="Answer 17 questions"
+          body="Sliders and scenarios that map where your relational openness naturally settles."
+        />
+        <InfoRow
+          step="2"
+          title="Add context where it matters"
+          body="Each question has an optional text box. Use it when your real answer is more nuanced than a slider can capture — a specific memory, a pattern, an exception."
+        />
+        <InfoRow
+          step="3"
+          title="AI refines your terrain"
+          body="After you finish, the AI reads your notes and shifts your parameters to better reflect what you actually wrote. Questions you leave blank are unaffected."
+        />
+      </div>
+
+      <p style={{
+        fontSize: '0.8rem',
+        color: 'var(--color-text-muted)',
+        lineHeight: 1.6,
+        marginBottom: '1.5rem',
+        padding: '0.75rem',
+        borderRadius: '8px',
+        background: 'var(--color-bg-card)',
+        border: '1px solid var(--color-border)',
+      }}>
+        The AI reading uses the managed Love Landscape service — no setup needed.
+        You can also skip the text boxes entirely; the assessment works without them.
+      </p>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <button className="btn-secondary" onClick={onBack}>Back</button>
+        <button className="btn-primary" onClick={onStart}>Start Assessment →</button>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ step, title, body }) {
+  return (
+    <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+      <div style={{
+        width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+        background: 'rgba(127,119,221,0.15)',
+        border: '1.5px solid rgba(127,119,221,0.3)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-accent)',
+        marginTop: '1px',
+      }}>
+        {step}
+      </div>
+      <div>
+        <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '0.2rem' }}>{title}</p>
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{body}</p>
       </div>
     </div>
   );

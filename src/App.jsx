@@ -10,7 +10,7 @@ import RefiningScreen from './components/RefiningScreen.jsx';
 import Footer from './components/Footer.jsx';
 import { computeParams } from './data/paramCompute.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
-import { loadLLMConfig, adjustParams } from './data/llmClient.js';
+import { getEffectiveConfig, adjustParams } from './data/llmClient.js';
 
 const STORAGE_KEY = 'love-landscape-result';
 
@@ -108,11 +108,11 @@ export default function App() {
     setBaseParams(p);
     setContextAnswers(ctx);
 
-    // Check if LLM is configured and user provided any context
-    const config = loadLLMConfig();
+    // Refine with LLM if user provided any context (managed service is always available)
+    const config = getEffectiveConfig();
     const hasContext = Object.values(ctx).some(v => v && v.trim());
 
-    if (config && hasContext) {
+    if (hasContext) {
       // Show refining screen while LLM adjusts params
       setParams(p); // set base params so refining screen can show them
       setCode(encodeParams(p));
