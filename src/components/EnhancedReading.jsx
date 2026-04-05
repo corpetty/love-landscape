@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getEffectiveConfig, chatCompletion } from '../data/llmClient.js';
 import { buildReadingPrompt } from '../data/llmPrompt.js';
+import ReadingRenderer from './ReadingRenderer.jsx';
 
 /**
  * @param {Object}   props
@@ -42,9 +43,7 @@ export default function EnhancedReading({ params, contextAnswers, onOpenSettings
       <div style={{ marginTop: '1.5rem' }}>
         <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>AI Reading</h3>
         <div className="card" style={{ padding: '1rem 1.15rem' }}>
-          <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-            {reading}
-          </div>
+          <ReadingRenderer text={reading} />
           <button
             className="btn-secondary"
             onClick={handleGenerate}

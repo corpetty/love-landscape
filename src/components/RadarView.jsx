@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   Radar, ResponsiveContainer, Legend,
@@ -9,6 +9,19 @@ const ACCENT = '#7F77DD';
 const PARTNER_COLOR = '#2dd4a8';
 
 export default function RadarView({ params, partnerParams, view = 'yours' }) {
+  const containerRef = useRef(null);
+  const [narrow, setNarrow] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const check = () => setNarrow(el.clientWidth < 420);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const reading = generateReading(params);
 
   const data = reading.map((item, i) => {
@@ -27,14 +40,14 @@ export default function RadarView({ params, partnerParams, view = 'yours' }) {
   const showTheirs = (view === 'theirs' || view === 'combined') && partnerParams;
 
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       width: '100%',
       maxWidth: '500px',
       margin: '0 auto',
       aspectRatio: '1',
     }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart data={data} cx="50%" cy="50%" outerRadius="72%">
+        <RadarChart data={data} cx="50%" cy="50%" outerRadius={narrow ? '62%' : '72%'}>
           <PolarGrid
             stroke="var(--color-border)"
             strokeOpacity={0.5}
@@ -42,7 +55,7 @@ export default function RadarView({ params, partnerParams, view = 'yours' }) {
           <PolarAngleAxis
             dataKey="param"
             tick={{
-              fontSize: 10,
+              fontSize: narrow ? 8 : 10,
               fill: 'var(--color-text-muted)',
               fontWeight: 500,
             }}
@@ -50,7 +63,7 @@ export default function RadarView({ params, partnerParams, view = 'yours' }) {
           <PolarRadiusAxis
             angle={90}
             domain={[0, 100]}
-            tick={{ fontSize: 8, fill: 'var(--color-text-muted)' }}
+            tick={{ fontSize: narrow ? 6 : 8, fill: 'var(--color-text-muted)' }}
             tickCount={5}
             axisLine={false}
           />

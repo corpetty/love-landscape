@@ -16,11 +16,11 @@ export function createLabelOverlay(container) {
     el.style.cssText = `
       position: absolute;
       font-family: system-ui, -apple-system, sans-serif;
-      font-size: 11px;
+      font-size: clamp(9px, 2.5vw, 11px);
       font-weight: 600;
       letter-spacing: 0.02em;
       white-space: nowrap;
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 12px;
       transform: translate(-50%, -50%);
       transition: opacity 0.25s ease, transform 0.15s ease;
@@ -42,7 +42,7 @@ export function createLabelOverlay(container) {
     el.style.cssText = `
       position: absolute;
       font-family: system-ui, -apple-system, sans-serif;
-      font-size: 9px;
+      font-size: clamp(7px, 2vw, 9px);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.12em;

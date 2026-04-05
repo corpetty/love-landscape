@@ -50,6 +50,8 @@ export default function LandscapeReading({ params }) {
           flexDirection: 'column',
           gap: '0.75rem',
           marginTop: '0.5rem',
+          maxHeight: '60vh',
+          overflowY: 'auto',
         }}>
           {reading.map((item, i) => (
             <ParameterCard key={i} item={item} />

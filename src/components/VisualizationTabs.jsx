@@ -25,7 +25,9 @@ export default function VisualizationTabs({ params, partnerParams, view }) {
         borderRadius: '8px',
         padding: '3px',
         width: 'fit-content',
+        maxWidth: '100%',
         margin: '0 auto 0.75rem',
+        flexWrap: 'wrap',
       }}>
         {TABS.map((tab) => (
           <button

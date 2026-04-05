@@ -198,14 +198,25 @@ button:disabled {
   }
 }
 
-/* Mobile adjustments */
+/* Tablet and below */
+@media (max-width: 768px) {
+  #root {
+    padding: 1.25rem 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+}
+
+/* Small phone */
 @media (max-width: 480px) {
   #root {
     padding: 1rem 0.75rem;
   }
 
   h1 {
-    font-size: 1.8rem !important;
+    font-size: clamp(1.5rem, 5vw, 2.2rem) !important;
   }
 
   h2 {
@@ -215,5 +226,9 @@ button:disabled {
   .btn-primary {
     padding: 0.65rem 1.5rem;
     font-size: 0.95rem;
+  }
+
+  .card {
+    padding: 0.85rem;
   }
 }

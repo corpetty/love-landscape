@@ -78,7 +78,14 @@ YOUR ROLE:
 - Be warm but honest — don't flatten complexity
 - Use the terrain metaphor naturally (valleys, ridges, passes, fog, frontier)
 - Keep it under 300 words
-- Don't list parameters mechanically — weave them into a narrative`;
+- Don't list parameters mechanically — weave them into a narrative
+
+FORMAT (you MUST follow this):
+- Structure your response with 3-4 sections, each starting with a markdown header (##)
+- Use these section titles: "Your Terrain", "Where You Settle", "Where It Gets Steep", "The Frontier"
+- Each section: 2-4 sentences
+- Use **bold** for the most important phrases the reader should notice
+- Do NOT use bullet points or numbered lists — write in flowing prose`;
 
 /**
  * Build a prompt that asks the LLM to adjust parameter values based on context.
@@ -172,7 +179,14 @@ YOUR ROLE:
 - Be warm but don't flatten real tension — naming it IS the gift
 - Use the terrain metaphor naturally (valleys, ridges, passes, frontier)
 - Keep under 400 words
-- Don't list parameters — weave dynamics into a narrative`;
+- Don't list parameters — weave dynamics into a narrative
+
+FORMAT (you MUST follow this):
+- Structure your response with 3-4 sections, each starting with a markdown header (##)
+- Use these section titles: "Where You Meet", "The Friction Points", "What's Beautiful Here", "Conversations to Have"
+- Each section: 2-4 sentences
+- Use **bold** for key phrases the readers should notice
+- Do NOT use bullet points or numbered lists — write in flowing prose`;
 
 /**
  * Build a prompt for pair/combined landscape reading.

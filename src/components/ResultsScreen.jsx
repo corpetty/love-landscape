@@ -141,7 +141,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           Share your code with a partner. When they take the assessment, paste their code here to
           see how your landscapes overlap.
         </p>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <input
             type="text"
             value={partnerCode}
@@ -149,7 +149,8 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
             placeholder="Partner's code (L1_... or L2_...)"
             aria-label="Partner's landscape code"
             style={{
-              flex: 1,
+              flex: '1 1 200px',
+              minWidth: 0,
               padding: '0.6rem 0.85rem',
               borderRadius: '6px',
               border: `1px solid ${partnerError ? '#f97066' : 'var(--color-border)'}`,

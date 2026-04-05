@@ -3,7 +3,7 @@ import React from 'react';
 export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResult, onContinue }) {
   return (
     <div style={{ textAlign: 'center', paddingTop: '3.5rem' }}>
-      <h1 style={{ fontSize: '2.2rem', marginBottom: '0.75rem' }}>
+      <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', marginBottom: '0.75rem' }}>
         The Shape of Intimacy
       </h1>
       <p style={{

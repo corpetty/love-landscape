@@ -30,7 +30,9 @@ export default function ContourView({ params, partnerParams, view = 'yours' }) {
     const canvas = canvasRef.current;
     if (!canvas || !params) return;
 
-    const size = 400;
+    const displaySize = Math.min(containerRef.current?.clientWidth || 400, 500);
+    const dpr = Math.min(window.devicePixelRatio, 2);
+    const size = Math.round(displaySize * dpr);
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');

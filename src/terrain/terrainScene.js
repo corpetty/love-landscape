@@ -2,9 +2,13 @@ import * as THREE from 'three';
 import { GRID_SIZE, HEIGHT_SCALE, FEATURE_LABELS } from './constants.js';
 import { createTerrainMaterial } from './terrainMaterial.js';
 
+function terrainHeight(w) {
+  return Math.round(w * (w < 500 ? 1.0 : 0.75));
+}
+
 export function createTerrainScene(canvas, container, isDark) {
   const width = container.clientWidth;
-  const height = Math.round(width * 0.75);
+  const height = terrainHeight(width);
 
   // Renderer
   const bgColor = isDark ? 0x1a1a18 : 0xf5f4f0;
@@ -174,7 +178,7 @@ export function createTerrainScene(canvas, container, isDark) {
   // Resize
   function onResize() {
     const w = container.clientWidth;
-    const h = Math.round(w * 0.75);
+    const h = terrainHeight(w);
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
@@ -231,7 +235,7 @@ export function createTerrainScene(canvas, container, isDark) {
   let featureClickCallback = null;
   let pointerDownPos = null;
   const CLICK_THRESHOLD = 5; // px — distinguish click from drag
-  const FEATURE_DISTANCE = 0.18; // normalized terrain distance threshold
+  const FEATURE_DISTANCE = container.clientWidth < 500 ? 0.25 : 0.18;
 
   function onClickDown(e) {
     pointerDownPos = { x: e.clientX, y: e.clientY };
