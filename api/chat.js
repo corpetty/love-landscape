@@ -15,7 +15,7 @@
  *   FREE_CREDITS          — Free credits per new session (default: 5)
  */
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 const MODEL_FAST    = process.env.MANAGED_MODEL_FAST    || 'anthropic/claude-haiku-4-5';
 const MODEL_QUALITY = process.env.MANAGED_MODEL_QUALITY || 'anthropic/claude-sonnet-4-5';
@@ -29,7 +29,6 @@ function getSupabase() {
 }
 
 async function getOrCreateSession(supabase, sessionId) {
-  // Try fetching existing session
   const { data } = await supabase
     .from('reading_sessions')
     .select('*')
@@ -38,7 +37,6 @@ async function getOrCreateSession(supabase, sessionId) {
 
   if (data) return data;
 
-  // Create new session with free credits
   const { data: created, error } = await supabase
     .from('reading_sessions')
     .insert({ session_id: sessionId, free_credits: FREE_CREDITS, readings_used: 0, credits_purchased: 0 })
@@ -49,8 +47,7 @@ async function getOrCreateSession(supabase, sessionId) {
   return created;
 }
 
-module.exports = async function handler(req, res) {
-  // CORS headers so the browser can call this from the same domain
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -75,7 +72,6 @@ module.exports = async function handler(req, res) {
     return res.status(503).json({ error: 'Database not configured' });
   }
 
-  // Credit check
   const session = await getOrCreateSession(supabase, sessionId);
   if (!session) {
     return res.status(500).json({ error: 'Failed to initialize session' });
@@ -97,7 +93,6 @@ module.exports = async function handler(req, res) {
     .update({ readings_used: session.readings_used + 1 })
     .eq('session_id', sessionId);
 
-  // Choose model based on call type
   const model = callType === 'adjust' ? MODEL_FAST : MODEL_QUALITY;
 
   let orResponse;
@@ -120,7 +115,6 @@ module.exports = async function handler(req, res) {
       }),
     });
   } catch (err) {
-    // Network error — refund the credit
     await supabase
       .from('reading_sessions')
       .update({ readings_used: session.readings_used })
@@ -129,7 +123,6 @@ module.exports = async function handler(req, res) {
   }
 
   if (!orResponse.ok) {
-    // API error — refund the credit
     await supabase
       .from('reading_sessions')
       .update({ readings_used: session.readings_used })
@@ -146,4 +139,4 @@ module.exports = async function handler(req, res) {
     creditsRemaining: creditsRemaining - 1,
     model,
   });
-};
+}

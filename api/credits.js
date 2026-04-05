@@ -2,12 +2,9 @@
  * api/credits.js — Query remaining credits for a session
  *
  * GET /api/credits?sessionId=<uuid>
- *
- * Returns:
- *   { creditsRemaining, readingsUsed, creditsPurchased, freeCredits }
  */
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 const FREE_CREDITS = parseInt(process.env.FREE_CREDITS || '5', 10);
 
@@ -18,7 +15,7 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -29,7 +26,6 @@ module.exports = async function handler(req, res) {
   const { sessionId } = req.query;
 
   if (!sessionId) {
-    // No session yet — return default free credits
     return res.json({ creditsRemaining: FREE_CREDITS, readingsUsed: 0, creditsPurchased: 0, freeCredits: FREE_CREDITS });
   }
 
@@ -45,7 +41,6 @@ module.exports = async function handler(req, res) {
     .maybeSingle();
 
   if (!data || error) {
-    // Session doesn't exist yet — full credits available
     return res.json({ creditsRemaining: FREE_CREDITS, readingsUsed: 0, creditsPurchased: 0, freeCredits: FREE_CREDITS });
   }
 
@@ -57,4 +52,4 @@ module.exports = async function handler(req, res) {
     creditsPurchased: data.credits_purchased,
     freeCredits: data.free_credits,
   });
-};
+}

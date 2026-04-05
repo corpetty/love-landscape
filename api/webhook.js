@@ -5,20 +5,16 @@
  * reading_sessions row in Supabase.
  *
  * Required env vars:
- *   STRIPE_WEBHOOK_SECRET     — whsec_... (from Stripe dashboard)
+ *   STRIPE_WEBHOOK_SECRET
  *   SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
- *
- * Register this endpoint in Stripe dashboard:
- *   https://love-landscape.com/api/webhook
- *   Event: checkout.session.completed
  */
 
-const crypto = require('crypto');
-const { createClient } = require('@supabase/supabase-js');
+import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
-// Disable Next.js/Vercel body parsing so we can verify the raw Stripe signature
-module.exports.config = {
+// Disable body parsing so we can verify the raw Stripe signature
+export const config = {
   api: { bodyParser: false },
 };
 
@@ -29,9 +25,6 @@ function getSupabase() {
   );
 }
 
-/**
- * Read the raw request body as a Buffer/string.
- */
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -41,10 +34,6 @@ function getRawBody(req) {
   });
 }
 
-/**
- * Verify the Stripe webhook signature without the Stripe SDK.
- * Returns true if valid, false otherwise.
- */
 function verifyStripeSignature(rawBody, sigHeader, secret) {
   try {
     const parts = sigHeader.split(',').reduce((acc, part) => {
@@ -58,7 +47,6 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
     const payloadToSign = `${parts.t}.${rawBody}`;
     const hmac = crypto.createHmac('sha256', secret).update(payloadToSign, 'utf8').digest('hex');
 
-    // Timing-safe comparison
     return crypto.timingSafeEqual(
       Buffer.from(hmac, 'hex'),
       Buffer.from(parts.v1, 'hex'),
@@ -68,7 +56,7 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
   }
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -91,7 +79,6 @@ module.exports = async function handler(req, res) {
   }
 
   if (event.type !== 'checkout.session.completed') {
-    // Acknowledge other events without acting on them
     return res.status(200).json({ received: true });
   }
 
@@ -109,7 +96,6 @@ module.exports = async function handler(req, res) {
 
   const supabase = getSupabase();
 
-  // Upsert: add credits to an existing session or create a new one with credits
   const { data: existing } = await supabase
     .from('reading_sessions')
     .select('credits_purchased')
@@ -122,7 +108,6 @@ module.exports = async function handler(req, res) {
       .update({ credits_purchased: existing.credits_purchased + creditsToAdd })
       .eq('session_id', sessionId);
   } else {
-    // Session doesn't exist yet — create it with purchased credits
     await supabase
       .from('reading_sessions')
       .insert({
@@ -134,4 +119,4 @@ module.exports = async function handler(req, res) {
   }
 
   return res.status(200).json({ received: true, creditsAdded: creditsToAdd });
-};
+}

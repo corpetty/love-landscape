@@ -5,15 +5,15 @@
  * Body: { sessionId: string }
  *
  * Required env vars:
- *   STRIPE_SECRET_KEY     — Stripe secret key (sk_live_... or sk_test_...)
- *   STRIPE_PRICE_ID       — Stripe Price ID for the reading pack
- *   STRIPE_CREDITS_PER_PACK — Credits granted on purchase (default: 20)
- *   VITE_PUBLIC_URL       — Production URL, e.g. https://love-landscape.com
+ *   STRIPE_SECRET_KEY
+ *   STRIPE_PRICE_ID
+ *   STRIPE_CREDITS_PER_PACK (default: 20)
+ *   VITE_PUBLIC_URL         (default: https://love-landscape.com)
  */
 
 const CREDITS_PER_PACK = parseInt(process.env.STRIPE_CREDITS_PER_PACK || '20', 10);
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -33,7 +33,6 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.VITE_PUBLIC_URL || 'https://love-landscape.com';
 
-  // Build form-encoded params for Stripe Checkout Sessions API
   const params = new URLSearchParams();
   params.append('mode', 'payment');
   params.append('line_items[0][price]', priceId);
@@ -42,7 +41,6 @@ module.exports = async function handler(req, res) {
   params.append('cancel_url', `${baseUrl}?payment=cancelled`);
   params.append('metadata[session_id]', sessionId);
   params.append('metadata[credits]', String(CREDITS_PER_PACK));
-  // Allow customers to enter quantity at checkout (optional, disabled for fixed packs)
   params.append('allow_promotion_codes', 'true');
 
   let stripeResponse;
@@ -70,4 +68,4 @@ module.exports = async function handler(req, res) {
     checkoutUrl: session.url,
     creditsPerPack: CREDITS_PER_PACK,
   });
-};
+}
