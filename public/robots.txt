@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /?admin=true
+
+Sitemap: https://love-landscape.com/sitemap.xml

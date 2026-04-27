@@ -23,6 +23,26 @@ const TITLES = {
   about: 'About — Love Landscape',
 };
 
+const META_DESCRIPTIONS = {
+  intro: 'A 17-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.',
+  assessment: 'Answer 17 questions about how you experience intimacy, touch, trust, and connection.',
+  loadCode: 'Load a previously saved Love Landscape code to view your relational terrain.',
+  refining: 'AI is refining your relational landscape based on your context...',
+  results: 'Your personalized 3D terrain map of relational intimacy.',
+  about: 'How Love Landscape works — the model behind the terrain.',
+};
+
+function updateMetaTag(property, content, isProperty = false) {
+  const attr = isProperty ? 'property' : 'name';
+  let el = document.querySelector(`meta[${attr}="${property}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute(attr, property);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('content', content);
+}
+
 export default function App() {
   // Admin dashboard route
   const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
@@ -66,9 +86,16 @@ export default function App() {
     } catch { /* ignore */ }
   }, []);
 
-  // Update page title
+  // Update page title and meta tags
   useEffect(() => {
-    document.title = TITLES[screen] || TITLES.intro;
+    const title = TITLES[screen] || TITLES.intro;
+    const description = META_DESCRIPTIONS[screen] || META_DESCRIPTIONS.intro;
+    document.title = title;
+    updateMetaTag('description', description);
+    updateMetaTag('og:title', title, true);
+    updateMetaTag('og:description', description, true);
+    updateMetaTag('twitter:title', title);
+    updateMetaTag('twitter:description', description);
   }, [screen]);
 
   // Save to localStorage when results are generated
@@ -80,18 +107,34 @@ export default function App() {
     }
   }, [code, params]);
 
-  // Update URL when viewing results
+  // Update URL and OG tags when viewing results
   useEffect(() => {
     if (screen === 'results' && code) {
       const url = new URL(window.location.href);
       url.searchParams.set('code', code);
       window.history.replaceState({}, '', url.toString());
+
+      // Update OG tags for shareable results
+      const pageUrl = url.toString();
+      const ogImageUrl = `${url.origin}/api/og?code=${encodeURIComponent(code)}`;
+      updateMetaTag('og:url', pageUrl, true);
+      updateMetaTag('og:image', ogImageUrl, true);
+      updateMetaTag('twitter:image', ogImageUrl);
+      updateMetaTag('canonical', pageUrl); // link tag handled separately below
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.href = pageUrl;
     } else if (screen === 'intro') {
       const url = new URL(window.location.href);
       if (url.searchParams.has('code')) {
         url.searchParams.delete('code');
         window.history.replaceState({}, '', url.toString());
       }
+      // Reset OG tags to defaults
+      updateMetaTag('og:url', url.origin + '/', true);
+      updateMetaTag('og:image', url.origin + '/api/og', true);
+      updateMetaTag('twitter:image', url.origin + '/api/og');
+      const canonical = document.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.href = url.origin + '/';
     }
   }, [screen, code]);
 
