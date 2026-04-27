@@ -177,3 +177,38 @@ GRANT EXECUTE ON FUNCTION get_param_means            TO anon;
 GRANT EXECUTE ON FUNCTION get_param_histogram        TO anon;
 GRANT EXECUTE ON FUNCTION get_demographic_breakdown  TO anon;
 GRANT EXECUTE ON FUNCTION get_reading_consent_count  TO anon;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Coupon codes — admin-created codes that grant reading credits
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE coupon_codes (
+  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  code          TEXT UNIQUE NOT NULL,
+  credits       INT NOT NULL DEFAULT 5,         -- credits granted per redemption
+  max_uses      INT DEFAULT NULL,               -- NULL = unlimited
+  times_used    INT NOT NULL DEFAULT 0,
+  valid_from    TIMESTAMPTZ DEFAULT now(),
+  valid_until   TIMESTAMPTZ DEFAULT NULL,       -- NULL = no expiry
+  note          TEXT,                            -- internal note (e.g. "podcast promo")
+  active        BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE UNIQUE INDEX coupon_codes_code_lower_idx ON coupon_codes (lower(code));
+ALTER TABLE coupon_codes ENABLE ROW LEVEL SECURITY;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Coupon redemptions — tracks which sessions redeemed which codes
+-- ─────────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE coupon_redemptions (
+  id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  coupon_id     UUID NOT NULL REFERENCES coupon_codes(id),
+  session_id    UUID NOT NULL,
+  credits       INT NOT NULL,
+  redeemed_at   TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (coupon_id, session_id)
+);
+
+ALTER TABLE coupon_redemptions ENABLE ROW LEVEL SECURITY;

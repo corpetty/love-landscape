@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   loadLLMConfig, saveLLMConfig, getDefaultModel,
   testConnection, refreshCredits, startCreditCheckout,
-  getCachedCredits, getSessionId,
+  redeemCoupon, getCachedCredits, getSessionId,
 } from '../data/llmClient.js';
 
 const BYOK_PROVIDERS = [
@@ -24,6 +24,9 @@ export default function SettingsPanel({ onClose }) {
   const [credits, setCredits]           = useState(null);
   const [checkingOut, setCheckingOut]   = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
+  const [couponCode, setCouponCode]       = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponResult, setCouponResult]   = useState(null); // { ok, message }
 
   useEffect(() => {
     const config = loadLLMConfig();
@@ -87,6 +90,23 @@ export default function SettingsPanel({ onClose }) {
       setCheckoutError(err.message);
       setCheckingOut(false);
     }
+  }
+
+  async function handleRedeemCoupon(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    setCouponResult(null);
+    try {
+      const data = await redeemCoupon(couponCode.trim());
+      setCouponResult({ ok: true, message: data.message });
+      setCredits(data.creditsRemaining);
+      setCouponCode('');
+    } catch (err) {
+      setCouponResult({ ok: false, message: err.message });
+    }
+    setCouponLoading(false);
   }
 
   const needsApiKey = !useManaged && (provider === 'claude' || provider === 'openrouter');
@@ -181,6 +201,48 @@ export default function SettingsPanel({ onClose }) {
               {checkoutError}
             </p>
           )}
+
+          {/* Coupon code input */}
+          <div style={{ marginTop: '0.75rem', marginLeft: '1.5rem' }}>
+            <form onSubmit={handleRedeemCoupon} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => { setCouponCode(e.target.value); setCouponResult(null); }}
+                onClick={(e) => e.stopPropagation()}
+                placeholder="Coupon code"
+                style={{
+                  flex: 1, padding: '0.35rem 0.6rem', borderRadius: '6px',
+                  border: '1px solid var(--color-border)',
+                  background: 'var(--color-bg-card)', fontSize: '0.8rem',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              />
+              <button
+                type="submit"
+                onClick={(e) => e.stopPropagation()}
+                disabled={couponLoading || !couponCode.trim()}
+                style={{
+                  fontSize: '0.75rem', fontWeight: 600,
+                  padding: '0.35rem 0.7rem', borderRadius: '6px',
+                  background: 'var(--color-accent)', color: '#fff',
+                  cursor: couponLoading || !couponCode.trim() ? 'default' : 'pointer',
+                  opacity: couponLoading || !couponCode.trim() ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {couponLoading ? 'Applying...' : 'Apply'}
+              </button>
+            </form>
+            {couponResult && (
+              <p style={{
+                fontSize: '0.75rem', margin: '0.3rem 0 0',
+                color: couponResult.ok ? '#2dd4a8' : '#f97066',
+              }}>
+                {couponResult.ok ? `\u2713 ${couponResult.message}` : `\u2717 ${couponResult.message}`}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ── BYOK section ────────────────────────────────────────────── */}

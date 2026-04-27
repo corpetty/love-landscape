@@ -241,6 +241,25 @@ export async function refreshCredits() {
 }
 
 /**
+ * Redeem a coupon code for free reading credits.
+ * Returns { credits, creditsRemaining, message } or throws.
+ */
+export async function redeemCoupon(code) {
+  const sessionId = getSessionId();
+  const res = await fetch('/api/coupon', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionId, code }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Could not redeem coupon');
+  if (typeof data.creditsRemaining === 'number') {
+    setCachedCredits(data.creditsRemaining);
+  }
+  return data;
+}
+
+/**
  * Start a Stripe checkout to purchase more reading credits.
  * Returns { checkoutUrl } or throws.
  */
