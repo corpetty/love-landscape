@@ -10,6 +10,7 @@ import { decodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
 import AuthPanel from './AuthPanel.jsx';
 import SharePageCard from './SharePageCard.jsx';
+import FullReadingCard from './FullReadingCard.jsx';
 import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
 import { getOwnedResultByCode } from '../data/resultsClient.js';
 
@@ -168,6 +169,14 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
 
       {/* Public share page — device-owned results only */}
       {ownedEntry && <SharePageCard clientResultId={ownedEntry.client_result_id} />}
+
+      {/* The $12 Full Reading — device-owned results only */}
+      {ownedEntry && (
+        <FullReadingCard
+          clientResultId={ownedEntry.client_result_id}
+          partnerCode={partnerParams ? partnerCode : null}
+        />
+      )}
 
       {showAuth && (
         <AuthPanel

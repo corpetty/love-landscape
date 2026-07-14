@@ -78,11 +78,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
 
+  const supabase = getSupabase();
+
+  // Refunds (F0.4): revoke Full Reading access. charge.refunded carries a
+  // payment_intent, which we stored on the purchase at checkout completion.
+  if (event.type === 'charge.refunded') {
+    const paymentIntent = event.data.object?.payment_intent;
+    if (paymentIntent) {
+      await supabase
+        .from('purchases')
+        .update({ status: 'refunded' })
+        .eq('payment_intent', paymentIntent);
+    }
+    return res.status(200).json({ received: true, refundProcessed: Boolean(paymentIntent) });
+  }
+
   if (event.type !== 'checkout.session.completed') {
     return res.status(200).json({ received: true });
   }
-
-  const supabase = getSupabase();
 
   // Idempotency: record the Stripe event id before acting on it. A redelivered
   // event hits the primary-key conflict and exits without granting twice.
@@ -101,7 +114,50 @@ export default async function handler(req, res) {
   }
 
   const session = event.data.object;
-  const { session_id: sessionId, credits } = session.metadata || {};
+  const { session_id: sessionId, credits, sku, result_id: resultId } = session.metadata || {};
+
+  // Full Reading purchase (F0.4): record the entitlement + funnel milestone.
+  // Generation happens on first api/reading.js request, not here.
+  if (sku === 'full_reading') {
+    if (!resultId) return res.status(200).json({ received: true, warning: 'Missing result_id' });
+
+    const { data: inserted } = await supabase
+      .from('purchases')
+      .upsert({
+        stripe_session_id: session.id,
+        sku: 'full_reading',
+        status: 'paid',
+        amount_cents: session.amount_total ?? null,
+        session_id: sessionId || null,
+        result_id: resultId,
+        payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+      }, { onConflict: 'stripe_session_id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
+
+    if (inserted) {
+      // Milestone written only on the genuine first processing (upsert inserted).
+      const { data: resultRow } = await supabase
+        .from('results')
+        .select('client_result_id, user_id, is_dev')
+        .eq('id', resultId)
+        .maybeSingle();
+      await supabase.from('milestones').insert({
+        kind: 'purchase',
+        person_key: resultRow?.user_id || sessionId || 'unknown',
+        client_result_id: resultRow?.client_result_id || null,
+        meta: { sku: 'full_reading', amount_cents: session.amount_total ?? null },
+        is_dev: Boolean(resultRow?.is_dev),
+        happened_at: new Date().toISOString(),
+      });
+      // If the result already belongs to an account, attach the purchase to it.
+      if (resultRow?.user_id) {
+        await supabase.from('purchases').update({ user_id: resultRow.user_id }).eq('id', inserted.id);
+      }
+    }
+
+    return res.status(200).json({ received: true, purchaseRecorded: true });
+  }
 
   if (!sessionId || !credits) {
     return res.status(200).json({ received: true, warning: 'Missing metadata' });

@@ -6,6 +6,9 @@ import { Readable } from 'stream';
 const db = {
   stripe_events: new Set(),
   reading_sessions: new Map(), // session_id → row
+  purchases: new Map(),        // stripe_session_id → row
+  results: new Map(),          // id → row
+  milestones: [],
   dedupUnavailable: false,     // simulate migration not applied
 };
 
@@ -23,6 +26,40 @@ function mockFrom(table) {
         return { error: null };
       },
     };
+  }
+  if (table === 'purchases') {
+    return {
+      upsert: (row) => ({
+        select: () => ({
+          maybeSingle: async () => {
+            if (db.purchases.has(row.stripe_session_id)) return { data: null, error: null };
+            const stored = { id: `p-${db.purchases.size + 1}`, user_id: null, ...row };
+            db.purchases.set(row.stripe_session_id, stored);
+            return { data: { id: stored.id }, error: null };
+          },
+        }),
+      }),
+      update: (fields) => ({
+        eq: async (col, val) => {
+          for (const p of db.purchases.values()) {
+            if (p[col === 'payment_intent' ? 'payment_intent' : col] === val || p.id === val) {
+              if (p[col] === val) Object.assign(p, fields);
+            }
+          }
+          return { error: null };
+        },
+      }),
+    };
+  }
+  if (table === 'results') {
+    return {
+      select: () => ({
+        eq: (_c, id) => ({ maybeSingle: async () => ({ data: db.results.get(id) || null }) }),
+      }),
+    };
+  }
+  if (table === 'milestones') {
+    return { insert: async (row) => { db.milestones.push(row); return { error: null }; } };
   }
   if (table === 'reading_sessions') {
     return {
@@ -87,6 +124,9 @@ const SESSION = '11111111-2222-3333-4444-555555555555';
 beforeEach(() => {
   db.stripe_events.clear();
   db.reading_sessions.clear();
+  db.purchases.clear();
+  db.results.clear();
+  db.milestones.length = 0;
   db.dedupUnavailable = false;
   process.env.STRIPE_WEBHOOK_SECRET = SECRET;
   process.env.SUPABASE_URL = 'https://test.supabase.co';
@@ -155,5 +195,69 @@ describe('webhook idempotency', () => {
     await handler(signedRequest({ id: 'evt_x', type: 'invoice.paid', data: { object: {} } }), res);
     expect(res.statusCode).toBe(200);
     expect(db.stripe_events.size).toBe(0);
+  });
+});
+
+describe('webhook full_reading purchases (F0.4)', () => {
+  const RESULT_ID = '99999999-9999-4999-8999-999999999999';
+
+  function fullReadingEvent(id, stripeSessionId) {
+    return {
+      id,
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: stripeSessionId,
+          amount_total: 1200,
+          payment_intent: 'pi_123',
+          metadata: { sku: 'full_reading', result_id: RESULT_ID, session_id: SESSION },
+        },
+      },
+    };
+  }
+
+  beforeEach(() => {
+    db.results.set(RESULT_ID, { id: RESULT_ID, client_result_id: 'crid-1', user_id: null, is_dev: false });
+  });
+
+  it('records the purchase and exactly one milestone', async () => {
+    const res = mockRes();
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), res);
+    expect(res.body.purchaseRecorded).toBe(true);
+    const p = db.purchases.get('cs_1');
+    expect(p).toMatchObject({ sku: 'full_reading', status: 'paid', amount_cents: 1200, payment_intent: 'pi_123' });
+    expect(db.milestones.filter((m) => m.kind === 'purchase')).toHaveLength(1);
+  });
+
+  it('redelivered event neither duplicates the purchase nor the milestone', async () => {
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), mockRes());
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), mockRes());
+    expect(db.purchases.size).toBe(1);
+    expect(db.milestones.filter((m) => m.kind === 'purchase')).toHaveLength(1);
+  });
+
+  it('same purchase under a different event id still records once (stripe_session_id unique)', async () => {
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), mockRes());
+    await handler(signedRequest(fullReadingEvent('evt_fr2', 'cs_1')), mockRes());
+    expect(db.purchases.size).toBe(1);
+    expect(db.milestones.filter((m) => m.kind === 'purchase')).toHaveLength(1);
+  });
+
+  it('charge.refunded revokes by payment_intent', async () => {
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), mockRes());
+    const res = mockRes();
+    await handler(signedRequest({
+      id: 'evt_refund1',
+      type: 'charge.refunded',
+      data: { object: { payment_intent: 'pi_123' } },
+    }), res);
+    expect(res.body.refundProcessed).toBe(true);
+    expect(db.purchases.get('cs_1').status).toBe('refunded');
+  });
+
+  it('legacy credits purchases still work alongside', async () => {
+    await handler(signedRequest(checkoutEvent('evt_c1', SESSION, 20)), mockRes());
+    expect(db.reading_sessions.get(SESSION).credits_purchased).toBe(20);
+    expect(db.purchases.size).toBe(0);
   });
 });

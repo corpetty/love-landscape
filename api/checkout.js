@@ -21,11 +21,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { sessionId } = req.body || {};
+  const { sessionId, sku, resultId } = req.body || {};
   if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const priceId   = process.env.STRIPE_PRICE_ID;
+  const isFullReading = sku === 'full_reading';
+  const priceId = isFullReading ? process.env.STRIPE_PRICE_FULL_READING : process.env.STRIPE_PRICE_ID;
 
   if (!stripeKey || !priceId) {
     return res.status(503).json({ error: 'Payment service not configured' });
@@ -37,11 +38,29 @@ export default async function handler(req, res) {
   params.append('mode', 'payment');
   params.append('line_items[0][price]', priceId);
   params.append('line_items[0][quantity]', '1');
-  params.append('success_url', `${baseUrl}?payment=success&session_id=${encodeURIComponent(sessionId)}`);
-  params.append('cancel_url', `${baseUrl}?payment=cancelled`);
   params.append('metadata[session_id]', sessionId);
-  params.append('metadata[credits]', String(CREDITS_PER_PACK));
   params.append('allow_promotion_codes', 'true');
+
+  if (isFullReading) {
+    // Full Reading (F0.4): success returns to the purchased result's page.
+    if (!resultId || !/^[0-9a-f-]{36}$/i.test(resultId)) {
+      return res.status(400).json({ error: 'Missing resultId' });
+    }
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const { data: result } = await supabase.from('results').select('code').eq('id', resultId).maybeSingle();
+    if (!result) return res.status(404).json({ error: 'Result not found' });
+
+    params.append('metadata[sku]', 'full_reading');
+    params.append('metadata[result_id]', resultId);
+    params.append('success_url', `${baseUrl}/?code=${encodeURIComponent(result.code)}&purchase=success`);
+    params.append('cancel_url', `${baseUrl}/?code=${encodeURIComponent(result.code)}`);
+  } else {
+    // Legacy credits pack — unchanged.
+    params.append('success_url', `${baseUrl}?payment=success&session_id=${encodeURIComponent(sessionId)}`);
+    params.append('cancel_url', `${baseUrl}?payment=cancelled`);
+    params.append('metadata[credits]', String(CREDITS_PER_PACK));
+  }
 
   let stripeResponse;
   try {
