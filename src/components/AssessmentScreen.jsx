@@ -1,5 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { questions } from '../data/questions.js';
+import { computeParams } from '../data/paramCompute.js';
+import { getVariant } from '../data/journey.js';
+import ContourView from './ContourView.jsx';
+
+// F0.7 A/B: variant B shows a live mini-terrain forming after question 5
+// (the Duolicious lesson — value from early answers beats a front-loaded
+// question wall). Variant assignment/kill switch live in journey.js.
+const PREVIEW_FROM_QUESTION = 5;
 
 export default function AssessmentScreen({ onComplete, onBack }) {
   const [showIntro, setShowIntro] = useState(true);
@@ -7,7 +15,19 @@ export default function AssessmentScreen({ onComplete, onBack }) {
   const [answers, setAnswers] = useState({});
   const [contextAnswers, setContextAnswers] = useState({});
   const [fadeClass, setFadeClass] = useState('fade-in');
+  const [previewParams, setPreviewParams] = useState(null);
   const containerRef = useRef(null);
+
+  const progressive = getVariant() === 1;
+  const showPreview = progressive && !showIntro && current >= PREVIEW_FROM_QUESTION;
+
+  // Debounced live preview: unanswered questions default to 0.5 inside
+  // computeParams, so the terrain sharpens as answers accumulate.
+  useEffect(() => {
+    if (!showPreview) return undefined;
+    const t = setTimeout(() => setPreviewParams(computeParams(answers)), 250);
+    return () => clearTimeout(t);
+  }, [answers, showPreview]);
 
   const q = showIntro ? null : questions[current];
 
@@ -65,9 +85,27 @@ export default function AssessmentScreen({ onComplete, onBack }) {
   return (
     <div style={{ maxWidth: '560px', margin: '0 auto', paddingTop: '2rem' }}>
       {/* Progress bar */}
-      <div className="progress-bar" style={{ marginBottom: '2rem' }}>
+      <div className="progress-bar" style={{ marginBottom: showPreview ? '1rem' : '2rem' }}>
         <div className="progress-bar__fill" style={{ width: `${progress * 100}%` }} />
       </div>
+
+      {/* F0.7 variant B: the terrain forming live as answers accumulate */}
+      {showPreview && previewParams && (
+        <div className="fade-in" style={{
+          display: 'flex', alignItems: 'center', gap: '1rem',
+          marginBottom: '1.5rem', padding: '0.75rem 1rem',
+          background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
+          borderRadius: '10px',
+        }}>
+          <div style={{ width: '110px', flexShrink: 0, borderRadius: '8px', overflow: 'hidden' }}>
+            <ContourView params={previewParams} />
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
+            Your terrain is taking shape — {Object.keys(answers).length} of {questions.length} answers
+            mapped. It sharpens with every question.
+          </p>
+        </div>
+      )}
 
       <div ref={containerRef} className={fadeClass} style={{
         transition: 'opacity 0.2s ease, transform 0.2s ease',
