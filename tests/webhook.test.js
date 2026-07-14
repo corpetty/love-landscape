@@ -10,6 +10,7 @@ const db = {
   results: new Map(),          // id → row
   milestones: [],
   dedupUnavailable: false,     // simulate migration not applied
+  purchasesError: null,        // 'column' = payment_intent missing; 'hard' = always fail
 };
 
 function mockFrom(table) {
@@ -25,6 +26,12 @@ function mockFrom(table) {
         db.stripe_events.add(event_id);
         return { error: null };
       },
+      delete: () => ({
+        eq: async (_col, eventId) => {
+          db.stripe_events.delete(eventId);
+          return { error: null };
+        },
+      }),
     };
   }
   if (table === 'purchases') {
@@ -32,6 +39,12 @@ function mockFrom(table) {
       upsert: (row) => ({
         select: () => ({
           maybeSingle: async () => {
+            if (db.purchasesError === 'hard') {
+              return { data: null, error: { message: 'insert failed' } };
+            }
+            if (db.purchasesError === 'column' && 'payment_intent' in row) {
+              return { data: null, error: { message: "Could not find the 'payment_intent' column of 'purchases' in the schema cache" } };
+            }
             if (db.purchases.has(row.stripe_session_id)) return { data: null, error: null };
             const stored = { id: `p-${db.purchases.size + 1}`, user_id: null, ...row };
             db.purchases.set(row.stripe_session_id, stored);
@@ -128,6 +141,7 @@ beforeEach(() => {
   db.results.clear();
   db.milestones.length = 0;
   db.dedupUnavailable = false;
+  db.purchasesError = null;
   process.env.STRIPE_WEBHOOK_SECRET = SECRET;
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
@@ -259,5 +273,36 @@ describe('webhook full_reading purchases (F0.4)', () => {
     await handler(signedRequest(checkoutEvent('evt_c1', SESSION, 20)), mockRes());
     expect(db.reading_sessions.get(SESSION).credits_purchased).toBe(20);
     expect(db.purchases.size).toBe(0);
+  });
+
+  it('falls back without payment_intent when migration 005 is missing (paying customer > refund mapping)', async () => {
+    db.purchasesError = 'column';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const res = mockRes();
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), res);
+    expect(res.body.purchaseRecorded).toBe(true);
+    const p = db.purchases.get('cs_1');
+    expect(p.status).toBe('paid');
+    expect('payment_intent' in p).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('on a hard write failure: releases the dedup row and 500s so Stripe retries can succeed', async () => {
+    db.purchasesError = 'hard';
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res1 = mockRes();
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), res1);
+    expect(res1.statusCode).toBe(500);
+    expect(db.stripe_events.has('evt_fr1')).toBe(false); // released — not eaten
+    expect(db.purchases.size).toBe(0);
+
+    // Stripe retries after the underlying problem is fixed:
+    db.purchasesError = null;
+    const res2 = mockRes();
+    await handler(signedRequest(fullReadingEvent('evt_fr1', 'cs_1')), res2);
+    expect(res2.body.purchaseRecorded).toBe(true);
+    expect(db.purchases.get('cs_1').status).toBe('paid');
+    errSpy.mockRestore();
   });
 });

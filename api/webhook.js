@@ -121,19 +121,38 @@ export default async function handler(req, res) {
   if (sku === 'full_reading') {
     if (!resultId) return res.status(200).json({ received: true, warning: 'Missing result_id' });
 
-    const { data: inserted } = await supabase
-      .from('purchases')
-      .upsert({
-        stripe_session_id: session.id,
-        sku: 'full_reading',
-        status: 'paid',
-        amount_cents: session.amount_total ?? null,
-        session_id: sessionId || null,
-        result_id: resultId,
-        payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
-      }, { onConflict: 'stripe_session_id', ignoreDuplicates: true })
-      .select('id')
-      .maybeSingle();
+    const row = {
+      stripe_session_id: session.id,
+      sku: 'full_reading',
+      status: 'paid',
+      amount_cents: session.amount_total ?? null,
+      session_id: sessionId || null,
+      result_id: resultId,
+      payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
+    };
+    const upsertOpts = { onConflict: 'stripe_session_id', ignoreDuplicates: true };
+
+    let { data: inserted, error: upsertError } = await supabase
+      .from('purchases').upsert(row, upsertOpts).select('id').maybeSingle();
+
+    // Graceful degradation: if migration 005 (payment_intent column) isn't
+    // applied yet, record the entitlement anyway — refund mapping can be
+    // backfilled, a paying customer's access cannot wait on a migration.
+    if (upsertError && /payment_intent/.test(upsertError.message || '')) {
+      console.warn('purchases.payment_intent missing (run migration 005); recording without it');
+      const { payment_intent, ...withoutPi } = row;
+      ({ data: inserted, error: upsertError } = await supabase
+        .from('purchases').upsert(withoutPi, upsertOpts).select('id').maybeSingle());
+    }
+
+    if (upsertError) {
+      // A paid purchase failed to record. Release the dedup row so Stripe's
+      // retry can reprocess (insert-first dedup would otherwise eat it), and
+      // return 500 so Stripe DOES retry — never a silent 200 on money.
+      console.error('purchase record failed:', upsertError.message);
+      if (event.id) await supabase.from('stripe_events').delete().eq('event_id', event.id);
+      return res.status(500).json({ error: 'Purchase record failed; Stripe will retry' });
+    }
 
     if (inserted) {
       // Milestone written only on the genuine first processing (upsert inserted).
