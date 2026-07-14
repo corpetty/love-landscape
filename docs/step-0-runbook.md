@@ -27,7 +27,7 @@ Parent: [phase-0-spec.md](./phase-0-spec.md) §4 S0. Everything here is standalo
 4. Record results below.
 
 **Results (fill in):**
-- Env vars present: ☐ all / ☐ missing: ______
+- Env vars present: ☐ all / x missing: FREE_CREDITS
 - Test-mode e2e: ☐ pass / notes: ______
 - Double-delivery double-grants (expected bug): ☐ confirmed
 - Live $1 transaction + webhook 200 + grant: ☐ pass, charge id: ______, refunded: ☐

@@ -82,6 +82,24 @@ export default async function handler(req, res) {
     return res.status(200).json({ received: true });
   }
 
+  const supabase = getSupabase();
+
+  // Idempotency: record the Stripe event id before acting on it. A redelivered
+  // event hits the primary-key conflict and exits without granting twice.
+  // Fail-open on any other error (e.g. migration not yet applied) — that is
+  // exactly the legacy behavior, so this deploy can precede the migration.
+  if (event.id) {
+    const { error: dedupError } = await supabase
+      .from('stripe_events')
+      .insert({ event_id: event.id });
+    if (dedupError) {
+      if (dedupError.code === '23505') {
+        return res.status(200).json({ received: true, duplicate: true });
+      }
+      console.warn('stripe_events dedup unavailable, proceeding without:', dedupError.message);
+    }
+  }
+
   const session = event.data.object;
   const { session_id: sessionId, credits } = session.metadata || {};
 
@@ -93,8 +111,6 @@ export default async function handler(req, res) {
   if (!creditsToAdd || creditsToAdd <= 0) {
     return res.status(200).json({ received: true, warning: 'Invalid credits value' });
   }
-
-  const supabase = getSupabase();
 
   const { data: existing } = await supabase
     .from('reading_sessions')
