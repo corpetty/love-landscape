@@ -4,8 +4,9 @@ import { supabase, PARAM_COLUMNS } from '../data/supabase.js';
 import TerrainView from './TerrainView.jsx';
 import FunnelPanel from './FunnelPanel.jsx';
 
-const ADMIN_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // sha256("password")
-const AUTH_KEY = 'love-landscape-admin-auth';
+// One gate for the whole dashboard: the ADMIN_TOKEN, verified server-side by
+// /api/admin. (Replaces the old client-side password hash, which was cosmetic.)
+const TOKEN_KEY = 'll-admin-token';
 
 const PARAM_LABELS = [
   'Friendship depth', 'Romantic bond', 'Tender middle', 'Physical comfort',
@@ -22,8 +23,9 @@ const ACCENT = '#7F77DD';
 
 export default function AdminDashboard() {
   const [authenticated, setAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
+  const [tokenInput, setTokenInput] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [count, setCount] = useState(0);
@@ -32,10 +34,10 @@ export default function AdminDashboard() {
   const [demographics, setDemographics] = useState({});
   const [tab, setTab] = useState('research'); // 'research' | 'funnel'
 
-  // Check stored auth
+  // A token from an earlier visit this browser session unlocks directly.
   useEffect(() => {
     try {
-      if (localStorage.getItem(AUTH_KEY) === 'true') setAuthenticated(true);
+      if (sessionStorage.getItem(TOKEN_KEY)) setAuthenticated(true);
     } catch { /* ignore */ }
   }, []);
 
@@ -45,18 +47,30 @@ export default function AdminDashboard() {
     fetchAll();
   }, [authenticated]);
 
-  async function checkPassword() {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    if (hashHex === ADMIN_HASH) {
-      try { localStorage.setItem(AUTH_KEY, 'true'); } catch { /* ignore */ }
-      setAuthenticated(true);
-      setAuthError('');
-    } else {
-      setAuthError('Incorrect password.');
+  async function checkToken() {
+    const token = tokenInput.trim();
+    if (!token) return;
+    setAuthBusy(true);
+    setAuthError('');
+    try {
+      const res = await fetch('/api/admin?days=7', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      // `days` in the response distinguishes a real API answer from an SPA
+      // fallback page (local dev has no /api routes).
+      if (res.ok && body.days !== undefined) {
+        try { sessionStorage.setItem(TOKEN_KEY, token); } catch { /* ignore */ }
+        setAuthenticated(true);
+      } else if (res.status === 401) {
+        setAuthError('Invalid token.');
+      } else {
+        setAuthError(body.error || 'Could not verify — is /api/admin deployed and ADMIN_TOKEN set?');
+      }
+    } catch {
+      setAuthError('Network error reaching /api/admin.');
+    } finally {
+      setAuthBusy(false);
     }
   }
 
@@ -103,14 +117,17 @@ export default function AdminDashboard() {
   if (!authenticated) {
     return (
       <div style={{ maxWidth: '360px', margin: '0 auto', paddingTop: '6rem', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Research Dashboard</h2>
+        <h2 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>Dashboard</h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+          Enter the ADMIN_TOKEN (the value set in Vercel env).
+        </p>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <input
             type="password"
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setAuthError(''); }}
-            onKeyDown={(e) => e.key === 'Enter' && checkPassword()}
-            placeholder="Password"
+            value={tokenInput}
+            onChange={(e) => { setTokenInput(e.target.value); setAuthError(''); }}
+            onKeyDown={(e) => e.key === 'Enter' && checkToken()}
+            placeholder="Admin token"
             style={{
               flex: 1,
               padding: '0.6rem 0.85rem',
@@ -120,7 +137,9 @@ export default function AdminDashboard() {
               fontSize: '0.95rem',
             }}
           />
-          <button className="btn-primary" onClick={checkPassword}>Enter</button>
+          <button className="btn-primary" onClick={checkToken} disabled={authBusy}>
+            {authBusy ? '…' : 'Enter'}
+          </button>
         </div>
         {authError && <p style={{ color: '#f97066', fontSize: '0.85rem', marginTop: '0.5rem' }}>{authError}</p>}
       </div>
