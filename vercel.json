@@ -5,7 +5,8 @@
     "api/checkout.js": { "maxDuration": 10 },
     "api/webhook.js": { "maxDuration": 10 },
     "api/og.js": { "maxDuration": 10 },
-    "api/coupon.js": { "maxDuration": 10 }
+    "api/coupon.js": { "maxDuration": 10 },
+    "api/fakedoor.js": { "maxDuration": 10 }
   },
   "headers": [
     {
