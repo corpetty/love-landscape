@@ -4,7 +4,7 @@ import { record } from '../data/journey.js';
 
 /**
  * Email OTP sign-in modal (spec AD-3/AD-8).
- * Steps: email → 6-digit code → (claim other local results, if any) → done.
+ * Steps: email → emailed code → (claim other local results, if any) → done.
  * The result on screen is claimed implicitly; others are opt-in via
  * checkboxes so a shared phone never silently sweeps a partner's results.
  */
@@ -50,7 +50,8 @@ export default function AuthPanel({ currentEntry, onClose, onSignedIn }) {
 
   async function verify() {
     const token = codeInput.trim();
-    if (!/^\d{6}$/.test(token)) { setError('Enter the 6-digit code from the email.'); return; }
+    // OTP length is a Supabase config value (this project: 8; default: 6) — accept the range.
+    if (!/^\d{6,10}$/.test(token)) { setError('Enter the code from the email.'); return; }
     setBusy(true);
     setError('');
     const { error: err } = await verifyOtpCode(email, token);
@@ -125,12 +126,12 @@ export default function AuthPanel({ currentEntry, onClose, onSignedIn }) {
         {step === 'code' && (
           <>
             <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-              We sent a 6-digit code to <strong>{email}</strong>. Use the code from the{' '}
+              We sent a code to <strong>{email}</strong>. Use the code from the{' '}
               <strong>newest</strong> email — requesting a new code cancels earlier ones.
             </p>
             <input
-              ref={codeRef} type="text" inputMode="numeric" maxLength={6} value={codeInput}
-              placeholder="123456" autoComplete="one-time-code"
+              ref={codeRef} type="text" inputMode="numeric" maxLength={10} value={codeInput}
+              placeholder="12345678" autoComplete="one-time-code"
               onChange={(e) => { setCodeInput(e.target.value.replace(/\D/g, '')); setError(''); }}
               onKeyDown={(e) => e.key === 'Enter' && verify()}
               style={{ ...inputStyle, letterSpacing: '0.35em', textAlign: 'center', fontFamily: 'var(--font-mono)' }}
