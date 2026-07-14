@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase, PARAM_COLUMNS } from '../data/supabase.js';
 import TerrainView from './TerrainView.jsx';
+import FunnelPanel from './FunnelPanel.jsx';
 
 const ADMIN_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // sha256("password")
 const AUTH_KEY = 'love-landscape-admin-auth';
@@ -29,6 +30,7 @@ export default function AdminDashboard() {
   const [meanParams, setMeanParams] = useState(null);
   const [histograms, setHistograms] = useState({});
   const [demographics, setDemographics] = useState({});
+  const [tab, setTab] = useState('research'); // 'research' | 'funnel'
 
   // Check stored auth
   useEffect(() => {
@@ -98,12 +100,6 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  if (!supabase) {
-    return <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-      Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local
-    </div>;
-  }
-
   if (!authenticated) {
     return (
       <div style={{ maxWidth: '360px', margin: '0 auto', paddingTop: '6rem', textAlign: 'center' }}>
@@ -133,14 +129,37 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.6rem' }}>Research Dashboard</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <h1 style={{ fontSize: '1.6rem' }}>Dashboard</h1>
         <button className="btn-secondary" onClick={() => window.location.href = '/'} style={{ fontSize: '0.8rem' }}>
           Back to app
         </button>
       </div>
 
-      {loading ? (
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+        <button
+          className={tab === 'research' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('research')}
+          style={{ fontSize: '0.85rem', padding: '0.4rem 1.1rem' }}
+        >
+          Research
+        </button>
+        <button
+          className={tab === 'funnel' ? 'btn-primary' : 'btn-secondary'}
+          onClick={() => setTab('funnel')}
+          style={{ fontSize: '0.85rem', padding: '0.4rem 1.1rem' }}
+        >
+          Funnel
+        </button>
+      </div>
+
+      {tab === 'funnel' ? (
+        <FunnelPanel />
+      ) : !supabase ? (
+        <p style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+          Supabase not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local
+        </p>
+      ) : loading ? (
         <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '3rem' }}>Loading data...</p>
       ) : (
         <>
