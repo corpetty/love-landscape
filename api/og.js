@@ -125,6 +125,7 @@ export default function handler(req) {
                           type: 'div',
                           props: {
                             style: {
+                              display: 'flex', // Satori requires explicit flex here; without it the whole render throws
                               flex: 1,
                               height: '20px',
                               background: '#333',
@@ -159,7 +160,7 @@ export default function handler(req) {
                     maxWidth: '600px',
                     lineHeight: 1.6,
                   },
-                  children: '17 questions · 3D terrain · Zero data collected',
+                  children: '17 questions · 3D terrain · No account needed',
                 },
               },
           {
