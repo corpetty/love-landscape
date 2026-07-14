@@ -43,6 +43,7 @@ export default function AuthPanel({ currentEntry, onClose, onSignedIn }) {
     setBusy(false);
     if (err) { setError(err); return; }
     setEmail(clean);
+    setCodeInput(''); // a new send invalidates every earlier code — never leave a stale one in the box
     setCooldown(RESEND_COOLDOWN_S);
     setStep('code');
   }
@@ -124,7 +125,8 @@ export default function AuthPanel({ currentEntry, onClose, onSignedIn }) {
         {step === 'code' && (
           <>
             <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
-              We sent a 6-digit code to <strong>{email}</strong>.
+              We sent a 6-digit code to <strong>{email}</strong>. Use the code from the{' '}
+              <strong>newest</strong> email — requesting a new code cancels earlier ones.
             </p>
             <input
               ref={codeRef} type="text" inputMode="numeric" maxLength={6} value={codeInput}
