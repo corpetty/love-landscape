@@ -8,6 +8,9 @@ import EnhancedReading from './EnhancedReading.jsx';
 import PairReading from './PairReading.jsx';
 import { decodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
+import AuthPanel from './AuthPanel.jsx';
+import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
+import { getOwnedResultByCode } from '../data/resultsClient.js';
 
 export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings }) {
   const wasRefined = baseParams && params !== baseParams &&
@@ -19,6 +22,21 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
   const [confirmReset, setConfirmReset] = useState(false);
   // AI reading text — lifted so ResearchContribution can offer to include it
   const [aiReading, setAiReading] = useState('');
+  const [showAuth, setShowAuth] = useState(false);
+  // savedTick forces a re-render so getOwnedResultByCode re-reads the store after auth.
+  const [, setSavedTick] = useState(0);
+  const { user } = useAuth();
+  // This device's ownership entry for the code on screen (null for loaded partner codes).
+  const ownedEntry = getOwnedResultByCode(code);
+  const isSaved = Boolean(ownedEntry?.claimed);
+
+  // Signed-in user finishing a NEW assessment: link it without re-prompting.
+  React.useEffect(() => {
+    if (user && ownedEntry && !ownedEntry.claimed) {
+      completeSignup(ownedEntry).then(() => setSavedTick((t) => t + 1));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, ownedEntry?.client_result_id, ownedEntry?.claimed]);
 
   function loadPartner() {
     const p = decodeParams(partnerCode);
@@ -122,6 +140,38 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
       <div style={{ marginTop: '1.5rem' }}>
         <CodeDisplay code={code} onShareLink={handleShareLink} />
       </div>
+
+      {/* Save to account — only for results created on this device */}
+      {authAvailable && ownedEntry && (
+        <div className="card" style={{
+          marginTop: '1rem', padding: '1rem 1.25rem', display: 'flex',
+          alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap',
+        }}>
+          {isSaved ? (
+            <p style={{ fontSize: '0.9rem', color: '#2dd4a8' }}>
+              ✓ Saved to your account
+            </p>
+          ) : (
+            <>
+              <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', flex: '1 1 220px' }}>
+                Landscapes live only in this browser right now. A free account keeps them —
+                across devices, and safe from cleared history.
+              </p>
+              <button className="btn-primary" onClick={() => setShowAuth(true)} style={{ whiteSpace: 'nowrap' }}>
+                Save my landscape
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {showAuth && (
+        <AuthPanel
+          currentEntry={ownedEntry}
+          onClose={() => { setShowAuth(false); setSavedTick((t) => t + 1); }}
+          onSignedIn={() => setSavedTick((t) => t + 1)}
+        />
+      )}
 
       {/* Landscape reading */}
       <LandscapeReading params={view === 'theirs' && partnerParams ? partnerParams : params} />

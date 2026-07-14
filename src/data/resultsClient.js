@@ -38,6 +38,20 @@ export function getOwnedResult(clientResultId) {
   return read(STORE_KEY).find((r) => r.client_result_id === clientResultId) || null;
 }
 
+export function getOwnedResultByCode(code) {
+  return read(STORE_KEY).find((r) => r.code === code) || null;
+}
+
+/** Mark a result as linked to the signed-in account (bearer token now dead server-side). */
+export function markClaimed(clientResultId) {
+  const store = read(STORE_KEY);
+  const i = store.findIndex((r) => r.client_result_id === clientResultId);
+  if (i >= 0) {
+    store[i] = { ...store[i], claimed: true };
+    write(STORE_KEY, store);
+  }
+}
+
 function upsertOwned(entry) {
   const store = read(STORE_KEY);
   const i = store.findIndex((r) => r.client_result_id === entry.client_result_id);
