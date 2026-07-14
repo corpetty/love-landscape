@@ -8,6 +8,7 @@ import AdminDashboard from './components/AdminDashboard.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import RefiningScreen from './components/RefiningScreen.jsx';
 import MyLandscapes from './components/MyLandscapes.jsx';
+import SharedView from './components/SharedView.jsx';
 import Footer from './components/Footer.jsx';
 import { computeParams } from './data/paramCompute.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
@@ -25,7 +26,33 @@ const TITLES = {
   results: 'Your Landscape — Love Landscape',
   about: 'About — Love Landscape',
   landscapes: 'My Landscapes — Love Landscape',
+  sharedView: 'A Shared Landscape — Love Landscape',
 };
+
+/**
+ * One-shot consumption of the share bootstrap injected by api/share.js.
+ * Takes precedence over ?code=. In dev (no api runtime) ?shared=<code>
+ * simulates a share visit.
+ */
+function consumeShareBootstrap() {
+  try {
+    const share = window.__SHARE__;
+    if (share) {
+      delete window.__SHARE__;
+      return share;
+    }
+    if (import.meta.env.DEV) {
+      const url = new URL(window.location.href);
+      const sim = url.searchParams.get('shared');
+      if (sim) {
+        url.searchParams.delete('shared');
+        window.history.replaceState({}, '', url.toString());
+        return { slug: 'dev-sim', code: sim };
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
 
 const META_DESCRIPTIONS = {
   intro: 'A 17-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.',
@@ -60,12 +87,23 @@ export default function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [refineError, setRefineError] = useState(null);
+  const [sharedData, setSharedData] = useState(null); // { slug, code, params } from /r/<slug>
   // Set at assessment completion, consumed once when the final result renders:
   // the server-side create (spec AD-8) fires with the code the user actually sees.
   const pendingResultRef = useRef(null);
 
-  // On mount: check URL for ?code= param, or localStorage for saved result
+  // On mount: shared page bootstrap wins, then ?code=, then saved result.
   useEffect(() => {
+    const share = consumeShareBootstrap();
+    if (share) {
+      const decoded = decodeParams(share.code);
+      if (decoded) {
+        setSharedData({ slug: share.slug, code: share.code, params: decoded });
+        setScreen('sharedView');
+        return;
+      }
+    }
+
     const url = new URL(window.location.href);
     const urlCode = url.searchParams.get('code');
     if (urlCode) {
@@ -267,6 +305,15 @@ export default function App() {
       break;
     case 'landscapes':
       content = <MyLandscapes onOpen={handleOpenOwned} onBack={() => setScreen('intro')} />;
+      break;
+    case 'sharedView':
+      content = (
+        <SharedView
+          params={sharedData?.params}
+          code={sharedData?.code}
+          onTakeAssessment={handleBegin}
+        />
+      );
       break;
     case 'assessment':
       content = <AssessmentScreen onComplete={handleAssessmentComplete} onBack={() => setScreen('intro')} />;

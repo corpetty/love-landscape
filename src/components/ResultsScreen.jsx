@@ -9,6 +9,7 @@ import PairReading from './PairReading.jsx';
 import { decodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
 import AuthPanel from './AuthPanel.jsx';
+import SharePageCard from './SharePageCard.jsx';
 import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
 import { getOwnedResultByCode } from '../data/resultsClient.js';
 
@@ -164,6 +165,9 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           )}
         </div>
       )}
+
+      {/* Public share page — device-owned results only */}
+      {ownedEntry && <SharePageCard clientResultId={ownedEntry.client_result_id} />}
 
       {showAuth && (
         <AuthPanel

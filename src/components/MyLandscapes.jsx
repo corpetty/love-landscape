@@ -53,6 +53,7 @@ export default function MyLandscapes({ onOpen, onBack }) {
         created_at: r.created_at,
         owner_token: r.owner_token,
         claimed: Boolean(r.claimed),
+        is_public: Boolean(r.is_public),
         local: true,
       });
     }
@@ -71,6 +72,7 @@ export default function MyLandscapes({ onOpen, onBack }) {
             created_at: existing?.created_at || Date.parse(r.created_at),
             owner_token: existing?.owner_token,
             claimed: true,
+            is_public: Boolean(r.is_public),
             local: Boolean(existing),
           });
         }

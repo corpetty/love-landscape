@@ -52,6 +52,16 @@ export function markClaimed(clientResultId) {
   }
 }
 
+/** Record publish state locally (mirrors the server after a publish/unpublish). */
+export function setLocalShare(clientResultId, { is_public, slug }) {
+  const store = read(STORE_KEY);
+  const i = store.findIndex((r) => r.client_result_id === clientResultId);
+  if (i >= 0) {
+    store[i] = { ...store[i], is_public, slug };
+    write(STORE_KEY, store);
+  }
+}
+
 export function setLocalLabel(clientResultId, label) {
   const store = read(STORE_KEY);
   const i = store.findIndex((r) => r.client_result_id === clientResultId);
