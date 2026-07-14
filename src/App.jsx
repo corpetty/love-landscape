@@ -7,6 +7,7 @@ import AboutSection from './components/AboutSection.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import RefiningScreen from './components/RefiningScreen.jsx';
+import MyLandscapes from './components/MyLandscapes.jsx';
 import Footer from './components/Footer.jsx';
 import { computeParams } from './data/paramCompute.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
@@ -23,6 +24,7 @@ const TITLES = {
   refining: 'Refining — Love Landscape',
   results: 'Your Landscape — Love Landscape',
   about: 'About — Love Landscape',
+  landscapes: 'My Landscapes — Love Landscape',
 };
 
 const META_DESCRIPTIONS = {
@@ -217,6 +219,15 @@ export default function App() {
     setScreen('results');
   }
 
+  // Opening one of the user's own saved landscapes — not a partner load.
+  function handleOpenOwned(ownCode) {
+    const decoded = decodeParams(ownCode);
+    if (!decoded) return;
+    setParams(decoded);
+    setCode(ownCode);
+    setScreen('results');
+  }
+
   function handleReset() {
     setParams(null);
     setBaseParams(null);
@@ -250,8 +261,12 @@ export default function App() {
           onAbout={() => setShowAbout(true)}
           hasSavedResult={hasSavedResult}
           onContinue={() => setScreen('results')}
+          onMyLandscapes={() => setScreen('landscapes')}
         />
       );
+      break;
+    case 'landscapes':
+      content = <MyLandscapes onOpen={handleOpenOwned} onBack={() => setScreen('intro')} />;
       break;
     case 'assessment':
       content = <AssessmentScreen onComplete={handleAssessmentComplete} onBack={() => setScreen('intro')} />;

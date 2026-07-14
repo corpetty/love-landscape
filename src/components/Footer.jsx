@@ -28,7 +28,7 @@ export default function Footer({ onAbout, onSettings }) {
           How it works
         </button>
         <span style={{ opacity: 0.3 }}>|</span>
-        <span>No data collected. Everything stays on your device.</span>
+        <span>Your answers never leave your device. Anonymous usage counts only.</span>
         {onSettings && (
           <>
             <span style={{ opacity: 0.3 }}>|</span>

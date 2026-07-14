@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResult, onContinue }) {
+export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResult, onContinue, onMyLandscapes }) {
   return (
     <div style={{ textAlign: 'center', paddingTop: '3.5rem' }}>
       <h1 style={{ fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', marginBottom: '0.75rem' }}>
@@ -40,6 +40,14 @@ export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResu
         >
           I already have a code
         </button>
+
+        <button
+          className="btn-secondary"
+          onClick={onMyLandscapes}
+          style={{ fontSize: '0.85rem' }}
+        >
+          My landscapes
+        </button>
       </div>
 
       <div style={{
@@ -52,7 +60,7 @@ export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResu
       }}>
         <Feature icon="17" label="questions" />
         <Feature icon="3D" label="terrain" />
-        <Feature icon="0" label="data collected" />
+        <Feature icon="∅" label="no account needed" />
       </div>
 
       <button

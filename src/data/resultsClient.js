@@ -52,6 +52,20 @@ export function markClaimed(clientResultId) {
   }
 }
 
+export function setLocalLabel(clientResultId, label) {
+  const store = read(STORE_KEY);
+  const i = store.findIndex((r) => r.client_result_id === clientResultId);
+  if (i >= 0) {
+    store[i] = { ...store[i], label };
+    write(STORE_KEY, store);
+  }
+}
+
+export function removeOwned(clientResultId) {
+  write(STORE_KEY, read(STORE_KEY).filter((r) => r.client_result_id !== clientResultId));
+  dequeue(clientResultId);
+}
+
 function upsertOwned(entry) {
   const store = read(STORE_KEY);
   const i = store.findIndex((r) => r.client_result_id === entry.client_result_id);

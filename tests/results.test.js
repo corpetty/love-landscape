@@ -9,22 +9,34 @@ const db = {
   rateAllowed: true,
 };
 
+function findResult(col, val) {
+  return [...db.results.values()].find((r) => r[col] === val) || null;
+}
+
 function resultsTable() {
   return {
     upsert: (row, opts) => ({
       select: () => ({
         maybeSingle: async () => {
           if (db.results.has(row.client_result_id)) return { data: null, error: null }; // ignoreDuplicates
-          const stored = { id: crypto.randomUUID(), ...row };
+          const stored = { id: crypto.randomUUID(), user_id: null, ...row };
           db.results.set(row.client_result_id, stored);
           return { data: { id: stored.id }, error: null };
         },
       }),
     }),
     select: () => ({
-      eq: (_col, val) => ({
-        maybeSingle: async () => ({ data: db.results.get(val) ? { id: db.results.get(val).id } : null }),
+      eq: (col, val) => ({
+        maybeSingle: async () => ({ data: findResult(col, val) }),
+        order: async () => ({ data: [...db.results.values()].filter((r) => r[col] === val), error: null }),
       }),
+    }),
+    delete: () => ({
+      eq: async (col, val) => {
+        const row = findResult(col, val);
+        if (row) db.results.delete(row.client_result_id);
+        return { error: null };
+      },
     }),
   };
 }
@@ -168,9 +180,27 @@ describe('router', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  it('requires sign-in for claim', async () => {
-    const res = mockRes();
-    await handler(mockReq({ op: 'claim', tokens: [TOKEN] }), res);
-    expect(res.statusCode).toBe(401);
+  it('requires sign-in for claim and list', async () => {
+    for (const body of [{ op: 'claim', tokens: [TOKEN] }, { op: 'list' }]) {
+      const res = mockRes();
+      await handler(mockReq(body), res);
+      expect(res.statusCode).toBe(401);
+    }
+  });
+
+  it('delete requires ownership proof', async () => {
+    await handler(mockReq(createBody()), mockRes());
+    const resultId = db.results.get(CRID).id;
+    // No token, no JWT → 403; wrong token → 403; right token → ok.
+    const res1 = mockRes();
+    await handler(mockReq({ op: 'delete', result_id: resultId }), res1);
+    expect(res1.statusCode).toBe(403);
+    const res2 = mockRes();
+    await handler(mockReq({ op: 'delete', result_id: resultId, owner_token: 'b'.repeat(64) }), res2);
+    expect(res2.statusCode).toBe(403);
+    const res3 = mockRes();
+    await handler(mockReq({ op: 'delete', result_id: resultId, owner_token: TOKEN }), res3);
+    expect(res3.body?.ok).toBe(true);
+    expect(db.results.size).toBe(0);
   });
 });

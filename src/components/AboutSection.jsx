@@ -77,9 +77,13 @@ export default function AboutSection({ onBack }) {
         <section>
           <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Privacy</h2>
           <p style={{ color: 'var(--color-text-muted)' }}>
-            Everything happens on your device. No data is sent to any server. Your landscape code
-            encodes your 13 parameters into a short string — share it however you like. No accounts,
-            no tracking, no analytics.
+            Your questionnaire answers never leave your device — the terrain is computed and
+            rendered locally. Your landscape code encodes your 13 parameters into a short string;
+            it's stored (without your answers) so features like saving and sharing work, along with
+            anonymous usage counts (completions, shares) that help us improve the app. Accounts are
+            optional and email-only. AI readings send your parameters to the language model you
+            choose in Settings. Research contribution remains a separate, explicit opt-in. No data
+            is ever sold or shared with third parties.
           </p>
         </section>
       </div>

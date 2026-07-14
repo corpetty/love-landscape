@@ -334,9 +334,32 @@ async function opSignup(req, res, supabase, body, isDev) {
   return res.json({ ok: true, new_profile: Boolean(inserted), claimed_result: claimedResult });
 }
 
+async function opList(req, res, supabase) {
+  const user = await verifyJwt(req, supabase);
+  if (!user) return res.status(401).json({ error: 'Sign in required' });
+  const { data, error } = await supabase
+    .from('results')
+    .select('id, client_result_id, code, label, created_at, is_public, slug')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+  if (error) return res.status(503).json({ error: 'Storage error' });
+  return res.json({ ok: true, results: data });
+}
+
+async function opDelete(req, res, supabase, body) {
+  const user = await verifyJwt(req, supabase);
+  const auth = await authorizeResult(supabase, body, user);
+  if (auth.error) return res.status(auth.code || 400).json({ error: auth.error });
+
+  // Content delete only: milestones are append-only by design and persist.
+  const { error } = await supabase.from('results').delete().eq('id', auth.row.id);
+  if (error) return res.status(503).json({ error: 'Storage error' });
+  return res.json({ ok: true });
+}
+
 // ── router ───────────────────────────────────────────────────────────────────
 
-const OPS = { create: opCreate, update: opUpdate, claim: opClaim, compare: opCompare, signup: opSignup };
+const OPS = { create: opCreate, update: opUpdate, claim: opClaim, compare: opCompare, signup: opSignup, list: opList, delete: opDelete };
 
 export default async function handler(req, res) {
   const origin = process.env.PUBLIC_ORIGIN || process.env.VITE_PUBLIC_URL || '*';
