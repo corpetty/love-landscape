@@ -6,7 +6,9 @@
     "api/webhook.js": { "maxDuration": 10 },
     "api/og.js": { "maxDuration": 10 },
     "api/coupon.js": { "maxDuration": 10 },
-    "api/fakedoor.js": { "maxDuration": 10 }
+    "api/fakedoor.js": { "maxDuration": 10 },
+    "api/sync.js": { "maxDuration": 10 },
+    "api/results.js": { "maxDuration": 10 }
   },
   "headers": [
     {

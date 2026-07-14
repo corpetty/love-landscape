@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import IntroScreen from './components/IntroScreen.jsx';
 import AssessmentScreen from './components/AssessmentScreen.jsx';
 import LoadCodeScreen from './components/LoadCodeScreen.jsx';
@@ -11,6 +11,8 @@ import Footer from './components/Footer.jsx';
 import { computeParams } from './data/paramCompute.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
 import { getEffectiveConfig, adjustParams } from './data/llmClient.js';
+import { record, getVariant } from './data/journey.js';
+import { recordResult } from './data/resultsClient.js';
 
 const STORAGE_KEY = 'love-landscape-result';
 
@@ -56,6 +58,9 @@ export default function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [refineError, setRefineError] = useState(null);
+  // Set at assessment completion, consumed once when the final result renders:
+  // the server-side create (spec AD-8) fires with the code the user actually sees.
+  const pendingResultRef = useRef(null);
 
   // On mount: check URL for ?code= param, or localStorage for saved result
   useEffect(() => {
@@ -138,7 +143,20 @@ export default function App() {
     }
   }, [screen, code]);
 
+  // Funnel diagnostics + server-truth result recording. recordResult is
+  // fire-and-forget with a durable retry queue — rendering never waits on it.
+  useEffect(() => {
+    if (screen === 'results' && code) {
+      record('results_view');
+      if (pendingResultRef.current) {
+        recordResult({ code, variant: pendingResultRef.current.variant });
+        pendingResultRef.current = null;
+      }
+    }
+  }, [screen, code]);
+
   function handleBegin() {
+    record('assessment_start');
     setScreen('assessment');
   }
 
@@ -150,6 +168,8 @@ export default function App() {
     const p = computeParams(answers);
     setBaseParams(p);
     setContextAnswers(ctx);
+    record('assessment_complete');
+    pendingResultRef.current = { variant: getVariant() };
 
     // Refine with LLM if user provided any context (managed service is always available)
     const config = getEffectiveConfig();
@@ -191,6 +211,7 @@ export default function App() {
 
   function handleCodeLoaded(decodedParams) {
     const c = encodeParams(decodedParams);
+    record('partner_code_load');
     setParams(decodedParams);
     setCode(c);
     setScreen('results');
