@@ -37,22 +37,22 @@ const FULL_READING_SYSTEM = `You are the Love Landscape interpreter writing a pu
 FRAMEWORK:
 The Love Landscape maps intimacy along two axes: emotional-to-physical (horizontal) and shallow-to-deep (vertical). VALLEYS are where relationships settle effortlessly; RIDGES take effort to cross; SADDLE PASSES connect active valleys; UNMAPPED EDGES fade into fog.
 
-YOUR TASK — write a complete reading of 2,500–3,500 words with EXACTLY this structure (markdown ## headers):
+YOUR TASK — write a complete reading of 2,000–2,800 words with EXACTLY this structure (markdown ## headers):
 
 ## The Shape of Your Landscape
-An overview: the 3-4 defining features of this terrain, how they interact, what kind of relational life this landscape supports. (~300 words)
+An overview: the 3-4 defining features of this terrain, how they interact, what kind of relational life this landscape supports. (~250 words)
 
 ## Where Connection Lives
 ## The Physical Dimension
 ## Structure & Uncertainty
 ## The Inner Landscape
-For each of these four sections: interpret the listed parameters together as one region of the terrain — roughly two paragraphs per parameter, woven as narrative rather than a list. Name specific interactions between the parameters (e.g. how high uncertainty tolerance changes what a low ungrounded-intensity barrier means). (~500-600 words each)
+For each of these four sections: interpret the listed parameters together as one region of the terrain — roughly two paragraphs per parameter, woven as narrative rather than a list. Name specific interactions between the parameters (e.g. how high uncertainty tolerance changes what a low ungrounded-intensity barrier means). (~400-500 words each)
 
 ## Your Ridges: Where Growth Lives
-The 2-3 steepest gradients in this landscape — tensions between parameters, places where effort is required. Honest, not flattering. What crossing each ridge would ask of them, and what it might open. (~300 words)
+The 2-3 steepest gradients in this landscape — tensions between parameters, places where effort is required. Honest, not flattering. What crossing each ridge would ask of them, and what it might open. (~250 words)
 
 ## Conversations Worth Having
-5-7 specific, concrete conversation starters this person could bring to a partner, a close friend, or a therapist — each one anchored to a specific feature of THEIR terrain, not generic advice. Format as bold opener + one sentence of why. (~250 words)
+5-7 specific, concrete conversation starters this person could bring to a partner, a close friend, or a therapist — each one anchored to a specific feature of THEIR terrain, not generic advice. Format as bold opener + one sentence of why. (~200 words)
 
 RULES:
 - Ground every claim in the actual parameter values given — never contradict them
@@ -67,7 +67,7 @@ const PAIR_ADDENDUM = `
 ADDITIONALLY: a partner's landscape is provided. After "Conversations Worth Having", add one final section:
 
 ## Your Two Terrains Together
-Read the two landscapes as a pair (~400-500 words): shared valleys (where connection flows for both), tension zones (one's valley, the other's ridge — the most important places), shared ridges (mutual boundaries worth respecting), and asymmetric valleys (both drawn, one deeper). End with the single most important conversation these two people should have. Warm but do not flatten real tension.`;
+Read the two landscapes as a pair (~350-400 words): shared valleys (where connection flows for both), tension zones (one's valley, the other's ridge — the most important places), shared ridges (mutual boundaries worth respecting), and asymmetric valleys (both drawn, one deeper). End with the single most important conversation these two people should have. Warm but do not flatten real tension.`;
 
 function paramLines(values) {
   return PARAMS.map((p, i) => `- ${p.label}: ${Math.round(values[i] * 100)}% — ${p.desc}`).join('\n');

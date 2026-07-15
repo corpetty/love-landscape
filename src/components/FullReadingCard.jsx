@@ -63,7 +63,9 @@ export default function FullReadingCard({ clientResultId, partnerCode }) {
       setPhase('ready');
       record('reading_view');
     } catch (e) {
-      setError(e.message);
+      setError(e.status === 504
+        ? 'The writing took longer than the server allowed. Nothing was charged twice — just try again; it usually completes on the next run.'
+        : e.message);
       setPhase(e.status === 402 ? 'idle' : 'error');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,7 +167,7 @@ export default function FullReadingCard({ clientResultId, partnerCode }) {
         <div style={{ flex: '1 1 260px' }}>
           <h3 style={{ fontSize: '1.05rem', marginBottom: '0.35rem' }}>The Full Reading</h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-            A ~3,000-word deep interpretation of your specific terrain: all 13 parameters in
+            A ~2,500-word deep interpretation of your specific terrain: all 13 parameters in
             depth, your growth edges, conversation starters built from your landscape
             {partnerCode ? ', and a compatibility section for the landscape you loaded' : ''}.
             One-time purchase, yours to regenerate.
