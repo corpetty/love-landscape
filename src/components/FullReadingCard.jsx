@@ -29,7 +29,12 @@ async function readingApi(body, entry) {
     }),
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) { const e = new Error(json.error || `Request failed (${res.status})`); e.status = res.status; throw e; }
+  if (!res.ok) {
+    const msg = [json.error || `Request failed (${res.status})`, json.detail].filter(Boolean).join(' — ');
+    const e = new Error(msg);
+    e.status = res.status;
+    throw e;
+  }
   return json;
 }
 

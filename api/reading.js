@@ -88,17 +88,27 @@ async function generate(params, partnerParams) {
     },
     body: JSON.stringify({
       model: MODEL_QUALITY,
-      max_tokens: 8000,
+      // ~3,000 words ≈ 4,500-6,000 tokens. Kept tight because OpenRouter
+      // pre-authorizes credits against max_tokens — an 8k reservation can 402
+      // on a thin balance even though the actual generation would fit.
+      max_tokens: 6500,
       messages: [
         { role: 'system', content: systemMessage },
         { role: 'user', content: userMessage },
       ],
     }),
   });
-  if (!orResponse.ok) throw new Error(`AI service error (${orResponse.status})`);
+  if (!orResponse.ok) {
+    const detail = await orResponse.text().catch(() => '');
+    console.error('full reading generation failed:', orResponse.status, detail.slice(0, 500));
+    throw new Error(`AI service error (${orResponse.status}): ${detail.slice(0, 200)}`);
+  }
   const data = await orResponse.json();
   const content = data.choices?.[0]?.message?.content || '';
-  if (content.length < 500) throw new Error('Generation came back empty');
+  if (content.length < 500) {
+    console.error('full reading came back short:', JSON.stringify(data).slice(0, 500));
+    throw new Error(`Generation came back empty (finish: ${data.choices?.[0]?.finish_reason || 'unknown'})`);
+  }
   return content;
 }
 
