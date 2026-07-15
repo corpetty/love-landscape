@@ -173,3 +173,19 @@ describe('api/reading generation', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
+
+describe('HTTP header hygiene (the em-dash incident)', () => {
+  it('no api file passes non-Latin-1 characters in header-bearing lines', async () => {
+    const fs = await import('fs');
+    const files = fs.readdirSync('api').filter((f) => f.endsWith('.js'));
+    for (const f of files) {
+      const src = fs.readFileSync(`api/${f}`, 'utf8');
+      for (const line of src.split('\n')) {
+        if (/['"](X-[A-Za-z-]+|HTTP-Referer|Authorization|Content-Type)['"]\s*:/.test(line)) {
+          // eslint-disable-next-line no-control-regex
+          expect(line, `api/${f}: ${line.trim()}`).not.toMatch(/[^\x00-\xFF]/);
+        }
+      }
+    }
+  });
+});

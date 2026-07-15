@@ -84,7 +84,7 @@ async function generate(params, partnerParams) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
       'HTTP-Referer': 'https://love-landscape.com',
-      'X-Title': 'Love Landscape — Full Reading',
+      'X-Title': 'Love Landscape Full Reading', // ASCII only: HTTP headers are ByteStrings; an em dash here killed every request
     },
     body: JSON.stringify({
       model: MODEL_QUALITY,
