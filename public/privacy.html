@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy — Love Landscape</title>
+  <meta name="description" content="What Love Landscape stores, for how long, and how to delete it." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-bg: #faf9f6; --color-bg-card: #ffffff; --color-text: #2a2a28;
+      --color-text-muted: #6b6960; --color-border: rgba(0,0,0,0.08); --color-accent: #7F77DD;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-bg: #1a1a18; --color-bg-card: #242422; --color-text: #e8e6e0;
+        --color-text-muted: #9a9890; --color-border: rgba(255,255,255,0.08);
+      }
+    }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--color-text); background: var(--color-bg); line-height: 1.7; }
+    main { max-width: 680px; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+    h1, h2 { font-family: 'EB Garamond', Georgia, serif; font-weight: 400; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.3rem; margin: 2rem 0 0.6rem; }
+    p, li { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--color-text); }
+    ul { padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .muted { color: var(--color-text-muted); font-size: 0.85rem; }
+    a { color: var(--color-accent); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.5rem 0 1rem; }
+    th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+    th { color: var(--color-text-muted); font-weight: 600; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Privacy</h1>
+    <p class="muted">Last updated July 2026 · <a href="/">back to the app</a></p>
+
+    <h2>The one-paragraph version</h2>
+    <p>
+      Your questionnaire answers never leave your device — the terrain is computed and rendered
+      locally. What we store is your result <em>code</em> (the 13 computed parameters), anonymous
+      usage counters, an optional email-only account, and purchase records. We sell nothing to
+      anyone, share nothing with third parties, and you can delete everything yourself.
+    </p>
+
+    <h2>What is stored, exactly</h2>
+    <table>
+      <tr><th>Data</th><th>When</th><th>Kept</th></tr>
+      <tr><td>Result codes (the 13 parameters, not your answers)</td><td>When you complete the assessment</td><td>Until you delete the landscape or your account</td></tr>
+      <tr><td>Relationship status (only if a status question is shown and answered)</td><td>At completion</td><td>Same as the result</td></tr>
+      <tr><td>Anonymous usage counters (completions, shares, sign-ups — no content)</td><td>As you use the app</td><td>Indefinitely, without any link to you after deletion</td></tr>
+      <tr><td>Diagnostic events (which screens were used; a random session id)</td><td>As you use the app</td><td>Purged after 12 months</td></tr>
+      <tr><td>Email address</td><td>Only if you create an account</td><td>Until account deletion</td></tr>
+      <tr><td>Codes you save for comparison (a partner's code you chose to keep)</td><td>Only if you save a comparison</td><td>Purged after 24 months, or with your account</td></tr>
+      <tr><td>Purchase records (Stripe id, amount) and purchased readings</td><td>Only if you buy a Full Reading</td><td>Financial record kept for accounting; the reading text is deleted with your account</td></tr>
+    </table>
+    <p class="muted">
+      Your free-text notes to the AI are sent to the language model to generate your reading and
+      are not stored by us. AI readings use the provider configured in Settings (the managed
+      service by default). Research contribution is a separate, explicit opt-in and is stored
+      anonymously, disconnected from accounts and from everything above.
+    </p>
+
+    <h2>Sharing and its limits — read this before publishing</h2>
+    <ul>
+      <li>A published share page is visible to anyone with the link. It shows your terrain and its code — never your answers or notes.</li>
+      <li>Unpublishing removes the page, but messaging apps may keep cached preview images for a while.</li>
+      <li>Your landscape <strong>code itself</strong> encodes your 13 parameters. Once someone has copied a code, they can decode it forever — unpublishing cannot take codes back. Share codes the way you'd share the information in them.</li>
+      <li>If someone shares their code with you and you save the comparison, that code is stored with <em>your</em> data (see table above). Extend them the same care.</li>
+    </ul>
+
+    <h2>Deleting your data</h2>
+    <p>
+      <strong>Without an account:</strong> everything lives in your browser — clearing site data
+      removes it. Results synced for features (saving, sharing, purchases) can be deleted from
+      <em>My Landscapes</em>.
+    </p>
+    <p>
+      <strong>With an account:</strong> My Landscapes → “Delete my account and data” removes your
+      account, landscapes, comparisons, and purchased readings immediately. Anonymous counters are
+      irreversibly disconnected from you. Purchase records keep only what payment reconciliation
+      requires (no reading content). Devices you used may hold local copies until their site data
+      is cleared.
+    </p>
+
+    <h2>Who processes data</h2>
+    <ul>
+      <li><strong>Supabase</strong> — database and authentication hosting</li>
+      <li><strong>Vercel</strong> — application hosting</li>
+      <li><strong>Stripe</strong> — payments (we never see your card number)</li>
+      <li><strong>Resend</strong> — delivers sign-in code emails</li>
+      <li><strong>Your chosen AI provider</strong> — receives parameters (and notes, if given) to write readings; the managed default routes via OpenRouter</li>
+    </ul>
+    <p class="muted">No advertising, no analytics vendors, no data brokers, no sale of data — ever.</p>
+
+    <h2>Questions</h2>
+    <p>
+      Reply to any email we've sent you, or reach out via
+      <a href="https://bayesianpersuasion.com" rel="noopener noreferrer">bayesianpersuasion.com</a>.
+    </p>
+  </main>
+</body>
+</html>

@@ -7,6 +7,7 @@ const db = {
   milestones: [],
   comparisons: [],
   rateAllowed: true,
+  tombstoned: new Set(),   // erased session_ids
 };
 
 function findResult(col, val) {
@@ -47,6 +48,15 @@ vi.mock('@supabase/supabase-js', () => ({
       if (table === 'results') return resultsTable();
       if (table === 'milestones') return { insert: async (row) => { db.milestones.push(row); return { error: null }; } };
       if (table === 'comparisons') return { insert: async (row) => { db.comparisons.push(row); return { error: null }; } };
+      if (table === 'deleted_sessions') {
+        return {
+          select: () => ({
+            eq: (_c, sid) => ({
+              maybeSingle: async () => ({ data: db.tombstoned.has(sid) ? { session_id: sid } : null }),
+            }),
+          }),
+        };
+      }
       throw new Error(`unexpected table ${table}`);
     },
     rpc: async () => ({ data: db.rateAllowed, error: null }),
@@ -91,6 +101,7 @@ beforeEach(() => {
   db.milestones.length = 0;
   db.comparisons.length = 0;
   db.rateAllowed = true;
+  db.tombstoned.clear();
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 });
@@ -202,5 +213,17 @@ describe('router', () => {
     await handler(mockReq({ op: 'delete', result_id: resultId, owner_token: TOKEN }), res3);
     expect(res3.body?.ok).toBe(true);
     expect(db.results.size).toBe(0);
+  });
+});
+
+describe('deletion tombstones', () => {
+  it('rejects creates from an erased session with 410', async () => {
+    db.tombstoned.add(SESSION);
+    const res = mockRes();
+    await handler(mockReq(createBody()), res);
+    expect(res.statusCode).toBe(410);
+    expect(res.body.drop).toBe(true);
+    expect(db.results.size).toBe(0);
+    expect(db.milestones).toHaveLength(0);
   });
 });

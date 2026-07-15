@@ -100,6 +100,13 @@ async function postCreate(entry) {
       is_dev: isDev() || undefined,
     }),
   });
+  if (res.status === 410) {
+    // Session tombstoned (account erased): drop permanently, never retry.
+    dequeue(entry.client_result_id);
+    const err = new Error('session erased');
+    err.permanent = true;
+    throw err;
+  }
   if (!res.ok) throw new Error(`create failed: ${res.status}`);
   const data = await res.json();
   upsertOwned({ ...entry, result_id: data.result_id });
@@ -145,7 +152,8 @@ export async function flushCreateQueue() {
     try {
       await postCreate(entry);
       dequeue(entry.client_result_id);
-    } catch {
+    } catch (e) {
+      if (e?.permanent) continue; // tombstoned — already dropped, move on
       return false; // still offline/blocked; keep the rest queued
     }
   }

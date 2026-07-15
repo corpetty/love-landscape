@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../data/supabase.js';
-import { useAuth } from '../data/auth.js';
+import { useAuth, signOut } from '../data/auth.js';
 import { getOwnedResults, setLocalLabel, removeOwned, ensureSynced } from '../data/resultsClient.js';
 import { isDev } from '../data/journey.js';
 
@@ -36,6 +36,7 @@ export default function MyLandscapes({ onOpen, onBack }) {
   const [editing, setEditing] = useState(null); // client_result_id
   const [labelDraft, setLabelDraft] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [accountDeleteStep, setAccountDeleteStep] = useState(0); // 0 hidden, 1 confirm, 2 working
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -127,6 +128,29 @@ export default function MyLandscapes({ onOpen, onBack }) {
     setRows((rs) => rs.filter((r) => r.client_result_id !== row.client_result_id));
   }
 
+  async function deleteAccount() {
+    setAccountDeleteStep(2);
+    setError('');
+    try {
+      const jwt = await getJwt();
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `Deletion failed (${res.status})`);
+      // Erase local traces too, then leave signed out.
+      ['ll-results-v1', 'll-create-queue-v1', 'love-landscape-result'].forEach((k) => {
+        try { localStorage.removeItem(k); } catch { /* ignore */ }
+      });
+      await signOut();
+      window.location.href = '/';
+    } catch (e) {
+      setError(e.message);
+      setAccountDeleteStep(0);
+    }
+  }
+
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', paddingTop: '1.5rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
@@ -203,6 +227,45 @@ export default function MyLandscapes({ onOpen, onBack }) {
             </div>
           </div>
         ))
+      )}
+
+      {/* Account erasure — signed-in users only */}
+      {user && (
+        <div style={{ marginTop: '2.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+          {accountDeleteStep === 0 ? (
+            <button
+              onClick={() => setAccountDeleteStep(1)}
+              style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+            >
+              Delete my account and data
+            </button>
+          ) : (
+            <div className="card" style={{ padding: '1rem', border: '1px solid rgba(249,112,102,0.4)' }}>
+              <p style={{ fontSize: '0.85rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>
+                This permanently deletes your account, every saved landscape and comparison,
+                and any purchased readings. Anonymous usage counters are retained without any
+                link to you. Purchase records keep only what payment reconciliation requires.
+                <strong> This cannot be undone.</strong>
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={deleteAccount}
+                  disabled={accountDeleteStep === 2}
+                  style={{ fontSize: '0.85rem', padding: '0.45rem 1rem', color: '#f97066', border: '1px solid #f97066', borderRadius: '6px' }}
+                >
+                  {accountDeleteStep === 2 ? 'Deleting…' : 'Yes, delete everything'}
+                </button>
+                <button
+                  onClick={() => setAccountDeleteStep(0)}
+                  disabled={accountDeleteStep === 2}
+                  style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

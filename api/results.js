@@ -114,6 +114,12 @@ async function opCreate(req, res, supabase, body, isDev) {
 
   if (await rateLimited(supabase, req, session_id)) return res.status(429).json({ error: 'Rate limited' });
 
+  // Erasure tombstone: a deleted account's device queue must not resurrect
+  // data. 410 tells the client to drop the queued entry permanently.
+  const { data: tombstone } = await supabase
+    .from('deleted_sessions').select('session_id').eq('session_id', session_id).maybeSingle();
+  if (tombstone) return res.status(410).json({ error: 'This session was erased', drop: true });
+
   const happenedAt = boundedHappenedAt(completed_at);
   const row = {
     client_result_id,

@@ -29,6 +29,18 @@ export default function Footer({ onAbout, onSettings }) {
         </button>
         <span style={{ opacity: 0.3 }}>|</span>
         <span>Your answers never leave your device. Anonymous usage counts only.</span>
+        <span style={{ opacity: 0.3 }}>|</span>
+        <a
+          href="/privacy.html"
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--color-text-muted)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }}
+        >
+          Privacy
+        </a>
         {onSettings && (
           <>
             <span style={{ opacity: 0.3 }}>|</span>
