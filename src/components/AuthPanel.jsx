@@ -102,7 +102,7 @@ export default function AuthPanel({ currentEntry, onClose, onSignedIn }) {
         borderRadius: '10px', padding: '1.5rem', width: '100%', maxWidth: '400px',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-          <h3 style={{ fontSize: '1.15rem' }}>Save your landscape</h3>
+          <h3 style={{ fontSize: '1.15rem' }}>{currentEntry ? 'Save your landscape' : 'Sign in'}</h3>
           <button onClick={onClose} aria-label="Close" style={{ fontSize: '1.1rem', color: 'var(--color-text-muted)' }}>✕</button>
         </div>
 
@@ -176,7 +176,9 @@ export default function AuthPanel({ currentEntry, onClose, onSignedIn }) {
         {step === 'done' && (
           <>
             <p style={{ fontSize: '0.95rem', marginBottom: '1rem' }}>
-              You're signed in — this landscape is saved to your account.
+              {currentEntry
+                ? "You're signed in — this landscape is saved to your account."
+                : "You're signed in."}
             </p>
             <button className="btn-primary" onClick={onClose} style={{ width: '100%' }}>Done</button>
           </>

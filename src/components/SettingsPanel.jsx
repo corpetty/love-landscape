@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  loadLLMConfig, saveLLMConfig, getDefaultModel,
-  testConnection, refreshCredits, startCreditCheckout,
-  redeemCoupon, getCachedCredits, getSessionId,
+  loadLLMConfig, saveLLMConfig, getDefaultModel, testConnection,
 } from '../data/llmClient.js';
 
 const BYOK_PROVIDERS = [
@@ -21,12 +19,6 @@ export default function SettingsPanel({ onClose }) {
   const [testResult, setTestResult]     = useState(null);
   const [testing, setTesting]           = useState(false);
   const [saved, setSaved]               = useState(false);
-  const [credits, setCredits]           = useState(null);
-  const [checkingOut, setCheckingOut]   = useState(false);
-  const [checkoutError, setCheckoutError] = useState(null);
-  const [couponCode, setCouponCode]       = useState('');
-  const [couponLoading, setCouponLoading] = useState(false);
-  const [couponResult, setCouponResult]   = useState(null); // { ok, message }
 
   useEffect(() => {
     const config = loadLLMConfig();
@@ -38,13 +30,6 @@ export default function SettingsPanel({ onClose }) {
       setBaseUrl(config.baseUrl || 'http://localhost:11434');
       setModel(config.model || '');
     }
-
-    // Load credits (cached first, then fresh from server)
-    const cached = getCachedCredits();
-    if (cached !== null) setCredits(cached);
-    refreshCredits().then((data) => {
-      if (data) setCredits(data.creditsRemaining);
-    });
   }, []);
 
   function handleSelectManaged() {
@@ -80,38 +65,8 @@ export default function SettingsPanel({ onClose }) {
     setTesting(false);
   }
 
-  async function handleBuyCredits() {
-    setCheckingOut(true);
-    setCheckoutError(null);
-    try {
-      const { checkoutUrl } = await startCreditCheckout();
-      window.location.href = checkoutUrl;
-    } catch (err) {
-      setCheckoutError(err.message);
-      setCheckingOut(false);
-    }
-  }
-
-  async function handleRedeemCoupon(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!couponCode.trim()) return;
-    setCouponLoading(true);
-    setCouponResult(null);
-    try {
-      const data = await redeemCoupon(couponCode.trim());
-      setCouponResult({ ok: true, message: data.message });
-      setCredits(data.creditsRemaining);
-      setCouponCode('');
-    } catch (err) {
-      setCouponResult({ ok: false, message: err.message });
-    }
-    setCouponLoading(false);
-  }
-
   const needsApiKey = !useManaged && (provider === 'claude' || provider === 'openrouter');
   const showBaseUrl = !useManaged && provider === 'ollama';
-  const creditsLow  = credits !== null && credits <= 1;
 
   return (
     <div
@@ -133,7 +88,7 @@ export default function SettingsPanel({ onClose }) {
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '1.1rem' }}>AI Reading Settings</h3>
+          <h3 style={{ fontSize: '1.1rem' }}>AI Provider</h3>
           <button onClick={onClose} style={{ fontSize: '1.2rem', color: 'var(--color-text-muted)', padding: '0.2rem' }}>×</button>
         </div>
 
@@ -164,85 +119,11 @@ export default function SettingsPanel({ onClose }) {
               borderRadius: '4px', padding: '0.1rem 0.45rem',
             }}>RECOMMENDED</span>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: '0 0 0.6rem 1.5rem' }}>
-            No API key needed. Hosted Claude, managed for you.
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5, margin: '0 0 0 1.5rem' }}>
+            No API key needed. Hosted Claude, managed for you. Reading credits are
+            managed on your account page.
           </p>
 
-          {/* Credits display */}
-          <div style={{ marginLeft: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-            <span style={{
-              fontSize: '0.8rem',
-              color: creditsLow ? '#f97066' : 'var(--color-text-muted)',
-              fontWeight: creditsLow ? 600 : 400,
-            }}>
-              {credits === null
-                ? 'Checking credits…'
-                : credits === 0
-                  ? '✗ No credits remaining'
-                  : `✓ ${credits} reading${credits === 1 ? '' : 's'} remaining`}
-            </span>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleBuyCredits(); }}
-              disabled={checkingOut}
-              style={{
-                fontSize: '0.75rem', fontWeight: 600,
-                padding: '0.25rem 0.7rem', borderRadius: '6px',
-                border: '1.5px solid var(--color-accent)',
-                color: 'var(--color-accent)', background: 'transparent',
-                cursor: checkingOut ? 'default' : 'pointer',
-                opacity: checkingOut ? 0.6 : 1,
-              }}
-            >
-              {checkingOut ? 'Redirecting…' : 'Get more readings'}
-            </button>
-          </div>
-          {checkoutError && (
-            <p style={{ fontSize: '0.75rem', color: '#f97066', margin: '0.35rem 0 0 1.5rem' }}>
-              {checkoutError}
-            </p>
-          )}
-
-          {/* Coupon code input */}
-          <div style={{ marginTop: '0.75rem', marginLeft: '1.5rem' }}>
-            <form onSubmit={handleRedeemCoupon} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => { setCouponCode(e.target.value); setCouponResult(null); }}
-                onClick={(e) => e.stopPropagation()}
-                placeholder="Coupon code"
-                style={{
-                  flex: 1, padding: '0.35rem 0.6rem', borderRadius: '6px',
-                  border: '1px solid var(--color-border)',
-                  background: 'var(--color-bg-card)', fontSize: '0.8rem',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              />
-              <button
-                type="submit"
-                onClick={(e) => e.stopPropagation()}
-                disabled={couponLoading || !couponCode.trim()}
-                style={{
-                  fontSize: '0.75rem', fontWeight: 600,
-                  padding: '0.35rem 0.7rem', borderRadius: '6px',
-                  background: 'var(--color-accent)', color: '#fff',
-                  cursor: couponLoading || !couponCode.trim() ? 'default' : 'pointer',
-                  opacity: couponLoading || !couponCode.trim() ? 0.5 : 1,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {couponLoading ? 'Applying...' : 'Apply'}
-              </button>
-            </form>
-            {couponResult && (
-              <p style={{
-                fontSize: '0.75rem', margin: '0.3rem 0 0',
-                color: couponResult.ok ? '#2dd4a8' : '#f97066',
-              }}>
-                {couponResult.ok ? `\u2713 ${couponResult.message}` : `\u2717 ${couponResult.message}`}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* ── BYOK section ────────────────────────────────────────────── */}

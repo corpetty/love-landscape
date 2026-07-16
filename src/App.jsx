@@ -10,6 +10,9 @@ import RefiningScreen from './components/RefiningScreen.jsx';
 import MyLandscapes from './components/MyLandscapes.jsx';
 import SharedView from './components/SharedView.jsx';
 import Footer from './components/Footer.jsx';
+import Header from './components/Header.jsx';
+import AccountScreen from './components/AccountScreen.jsx';
+import AuthPanel from './components/AuthPanel.jsx';
 import { computeParams } from './data/paramCompute.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
 import { getEffectiveConfig, adjustParams } from './data/llmClient.js';
@@ -27,6 +30,7 @@ const TITLES = {
   about: 'About — Love Landscape',
   landscapes: 'My Landscapes — Love Landscape',
   sharedView: 'A Shared Landscape — Love Landscape',
+  account: 'Account — Love Landscape',
 };
 
 /**
@@ -86,6 +90,7 @@ export default function App() {
   const [contextAnswers, setContextAnswers] = useState({});
   const [showAbout, setShowAbout] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [refineError, setRefineError] = useState(null);
   const [sharedData, setSharedData] = useState(null); // { slug, code, params } from /r/<slug>
   // Set at assessment completion, consumed once when the final result renders:
@@ -105,6 +110,16 @@ export default function App() {
     }
 
     const url = new URL(window.location.href);
+
+    // Deep link to a screen (e.g. /?screen=account after a credits checkout).
+    const screenParam = url.searchParams.get('screen');
+    if (screenParam === 'account' || screenParam === 'landscapes') {
+      url.searchParams.delete('screen');
+      window.history.replaceState({}, '', url.toString());
+      setScreen(screenParam);
+      return;
+    }
+
     const urlCode = url.searchParams.get('code');
     if (urlCode) {
       const decoded = decodeParams(urlCode);
@@ -280,11 +295,30 @@ export default function App() {
 
   const hasSavedResult = Boolean(code && params && screen === 'intro');
 
+  function goHome() { setShowAbout(false); setScreen('intro'); }
+  function goLandscapes() { setShowAbout(false); setScreen('landscapes'); }
+  function goAccount() { setShowAbout(false); setScreen('account'); }
+
+  const header = (
+    <Header
+      onHome={goHome}
+      onMyLandscapes={goLandscapes}
+      onAccount={goAccount}
+      onSignIn={() => setShowAuth(true)}
+    />
+  );
+
+  const authModal = showAuth && (
+    <AuthPanel currentEntry={null} onClose={() => setShowAuth(false)} />
+  );
+
   if (showAbout) {
     return (
       <>
+        {header}
         <AboutSection onBack={() => setShowAbout(false)} />
         <Footer onAbout={() => setShowAbout(false)} />
+        {authModal}
       </>
     );
   }
@@ -299,12 +333,21 @@ export default function App() {
           onAbout={() => setShowAbout(true)}
           hasSavedResult={hasSavedResult}
           onContinue={() => setScreen('results')}
-          onMyLandscapes={() => setScreen('landscapes')}
         />
       );
       break;
     case 'landscapes':
       content = <MyLandscapes onOpen={handleOpenOwned} onBack={() => setScreen('intro')} />;
+      break;
+    case 'account':
+      content = (
+        <AccountScreen
+          onBack={() => setScreen('intro')}
+          onSignIn={() => setShowAuth(true)}
+          onMyLandscapes={goLandscapes}
+          onOpenSettings={() => setShowSettings(true)}
+        />
+      );
       break;
     case 'sharedView':
       content = (
@@ -335,6 +378,7 @@ export default function App() {
           onReset={handleReset}
           onAbout={() => setShowAbout(true)}
           onOpenSettings={() => setShowSettings(true)}
+          onOpenAccount={goAccount}
         />
       );
       break;
@@ -344,9 +388,11 @@ export default function App() {
 
   return (
     <>
+      {header}
       {content}
-      <Footer onAbout={() => setShowAbout(true)} onSettings={() => setShowSettings(true)} />
+      <Footer onAbout={() => setShowAbout(true)} />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      {authModal}
     </>
   );
 }

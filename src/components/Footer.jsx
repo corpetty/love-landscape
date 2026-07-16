@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Footer({ onAbout, onSettings }) {
+export default function Footer({ onAbout }) {
   return (
     <footer style={{
       textAlign: 'center',
@@ -41,25 +41,6 @@ export default function Footer({ onAbout, onSettings }) {
         >
           Privacy
         </a>
-        {onSettings && (
-          <>
-            <span style={{ opacity: 0.3 }}>|</span>
-            <button
-              onClick={onSettings}
-              title="LLM Settings"
-              style={{
-                fontSize: '0.9rem',
-                color: 'var(--color-text-muted)',
-                opacity: 0.6,
-                transition: 'opacity 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.6'; }}
-            >
-              ⚙
-            </button>
-          </>
-        )}
       </div>
     </footer>
   );
