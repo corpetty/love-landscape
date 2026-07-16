@@ -15,7 +15,9 @@ import { getSessionId, isDev } from './journey.js';
 
 const STORE_KEY = 'll-results-v1';
 const QUEUE_KEY = 'll-create-queue-v1';
+const READINGS_KEY = 'll-readings-v1';
 const QUEUE_TTL_MS = 30 * 24 * 3600 * 1000;
+const READINGS_MAX = 20;
 
 function read(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
@@ -69,6 +71,27 @@ export function setLocalLabel(clientResultId, label) {
     store[i] = { ...store[i], label };
     write(STORE_KEY, store);
   }
+}
+
+/**
+ * Generated AI readings, keyed by landscape code (plus partner code for pair
+ * readings) so they survive refresh and the UI can show a "done" state.
+ * Kept in their own store: readings also exist for codes this device doesn't
+ * own (a loaded partner code).
+ */
+function readingKeyMatch(r, code, kind, partnerCode) {
+  return r.code === code && r.kind === kind && (r.partner_code || null) === (partnerCode || null);
+}
+
+export function getSavedReading(code, kind = 'solo', partnerCode = null) {
+  return read(READINGS_KEY).find((r) => readingKeyMatch(r, code, kind, partnerCode)) || null;
+}
+
+export function saveReading({ code, kind = 'solo', partnerCode = null, text }) {
+  const store = read(READINGS_KEY).filter((r) => !readingKeyMatch(r, code, kind, partnerCode));
+  store.push({ code, kind, partner_code: partnerCode || null, text, created_at: Date.now() });
+  while (store.length > READINGS_MAX) store.shift();
+  write(READINGS_KEY, store);
 }
 
 export function removeOwned(clientResultId) {

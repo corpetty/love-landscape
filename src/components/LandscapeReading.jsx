@@ -2,30 +2,32 @@ import React, { useState } from 'react';
 import { generateReading, generateSummary } from '../data/interpretation.js';
 import { ARTICLE_URL } from '../data/articleContent.js';
 
-export default function LandscapeReading({ params }) {
+export default function LandscapeReading({ params, hideTitle = false }) {
   const [expanded, setExpanded] = useState(false);
   const reading = generateReading(params);
   const summary = generateSummary(params);
 
   return (
-    <div style={{ marginTop: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Your Reading</h3>
-        <a
-          href={ARTICLE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            fontSize: '0.75rem',
-            color: 'var(--color-text-muted)',
-            textDecoration: 'underline',
-            textUnderlineOffset: '2px',
-            opacity: 0.7,
-          }}
-        >
-          Read the article
-        </a>
-      </div>
+    <div style={{ marginTop: hideTitle ? 0 : '1.5rem' }}>
+      {!hideTitle && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Your Reading</h3>
+          <a
+            href={ARTICLE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--color-text-muted)',
+              textDecoration: 'underline',
+              textUnderlineOffset: '2px',
+              opacity: 0.7,
+            }}
+          >
+            Read the article
+          </a>
+        </div>
+      )}
       <p style={{
         color: 'var(--color-text-muted)',
         fontSize: '0.95rem',

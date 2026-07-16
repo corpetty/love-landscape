@@ -2,19 +2,17 @@ import React, { useState } from 'react';
 import VisualizationTabs from './VisualizationTabs.jsx';
 import CodeDisplay from './CodeDisplay.jsx';
 import RecommendationCards from './RecommendationCards.jsx';
-import LandscapeReading from './LandscapeReading.jsx';
 import ResearchContribution from './ResearchContribution.jsx';
-import EnhancedReading from './EnhancedReading.jsx';
+import ReadingsSection from './ReadingsSection.jsx';
 import PairReading from './PairReading.jsx';
-import { decodeParams } from '../data/encoding.js';
+import { decodeParams, encodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
 import AuthPanel from './AuthPanel.jsx';
 import SharePageCard from './SharePageCard.jsx';
-import FullReadingCard from './FullReadingCard.jsx';
 import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
 import { getOwnedResultByCode } from '../data/resultsClient.js';
 
-export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings }) {
+export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount }) {
   const wasRefined = baseParams && params !== baseParams &&
     baseParams.some((v, i) => Math.abs(v - params[i]) > 0.001);
   const [partnerCode, setPartnerCode] = useState('');
@@ -67,6 +65,11 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
   const recommendations = partnerParams
     ? generateRecommendations(params, partnerParams)
     : null;
+
+  // Canonical form of the loaded partner code — the persistence key for
+  // readings must not vary with how the code was typed.
+  const canonicalPartnerCode = partnerParams ? encodeParams(partnerParams) : null;
+  const viewingTheirs = view === 'theirs' && partnerParams;
 
   return (
     <div style={{ paddingTop: '1.5rem' }}>
@@ -138,45 +141,50 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
         view={view}
       />
 
-      {/* Code + Share */}
-      <div style={{ marginTop: '1.5rem' }}>
+      {/* Readings — built-in, AI (credit), and Full ($12) in one ladder */}
+      <ReadingsSection
+        params={viewingTheirs ? partnerParams : params}
+        code={viewingTheirs ? canonicalPartnerCode : code}
+        contextAnswers={contextAnswers}
+        ownedEntry={ownedEntry}
+        fullReadingPartnerCode={partnerParams ? partnerCode : null}
+        onOpenSettings={onOpenSettings}
+        onGetCredits={onOpenAccount}
+        onReadingGenerated={setAiReading}
+      />
+
+      {/* Save & Share — code, account save, and the public page in one place */}
+      <section style={{ marginTop: '2rem' }}>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Save &amp; Share</h3>
         <CodeDisplay code={code} onShareLink={handleShareLink} />
-      </div>
 
-      {/* Save to account — only for results created on this device */}
-      {authAvailable && ownedEntry && (
-        <div className="card" style={{
-          marginTop: '1rem', padding: '1rem 1.25rem', display: 'flex',
-          alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap',
-        }}>
-          {isSaved ? (
-            <p style={{ fontSize: '0.9rem', color: '#2dd4a8' }}>
-              ✓ Saved to your account
-            </p>
-          ) : (
-            <>
-              <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', flex: '1 1 220px' }}>
-                Landscapes live only in this browser right now. A free account keeps them —
-                across devices, and safe from cleared history.
+        {/* Save to account — only for results created on this device */}
+        {authAvailable && ownedEntry && (
+          <div className="card" style={{
+            marginTop: '1rem', padding: '1rem 1.25rem', display: 'flex',
+            alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap',
+          }}>
+            {isSaved ? (
+              <p style={{ fontSize: '0.9rem', color: '#2dd4a8' }}>
+                ✓ Saved to your account
               </p>
-              <button className="btn-primary" onClick={() => setShowAuth(true)} style={{ whiteSpace: 'nowrap' }}>
-                Save my landscape
-              </button>
-            </>
-          )}
-        </div>
-      )}
+            ) : (
+              <>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', flex: '1 1 220px' }}>
+                  Landscapes live only in this browser right now. A free account keeps them —
+                  across devices, and safe from cleared history.
+                </p>
+                <button className="btn-primary" onClick={() => setShowAuth(true)} style={{ whiteSpace: 'nowrap' }}>
+                  Save my landscape
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
-      {/* Public share page — device-owned results only */}
-      {ownedEntry && <SharePageCard clientResultId={ownedEntry.client_result_id} />}
-
-      {/* The $12 Full Reading — device-owned results only */}
-      {ownedEntry && (
-        <FullReadingCard
-          clientResultId={ownedEntry.client_result_id}
-          partnerCode={partnerParams ? partnerCode : null}
-        />
-      )}
+        {/* Public share page — device-owned results only */}
+        {ownedEntry && <SharePageCard clientResultId={ownedEntry.client_result_id} />}
+      </section>
 
       {showAuth && (
         <AuthPanel
@@ -185,17 +193,6 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           onSignedIn={() => setSavedTick((t) => t + 1)}
         />
       )}
-
-      {/* Landscape reading */}
-      <LandscapeReading params={view === 'theirs' && partnerParams ? partnerParams : params} />
-
-      {/* AI-enhanced reading */}
-      <EnhancedReading
-        params={view === 'theirs' && partnerParams ? partnerParams : params}
-        contextAnswers={contextAnswers}
-        onOpenSettings={onOpenSettings}
-        onReadingGenerated={setAiReading}
-      />
 
       {/* Partner import */}
       <div style={{ marginTop: '2rem' }}>
@@ -239,7 +236,10 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
         <PairReading
           params={params}
           partnerParams={partnerParams}
+          code={code}
+          partnerCode={canonicalPartnerCode}
           onOpenSettings={onOpenSettings}
+          onGetCredits={onOpenAccount}
           onReadingGenerated={(text) => setAiReading((prev) => prev ? `${prev}\n\n---\n\n${text}` : text)}
         />
       )}

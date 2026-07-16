@@ -38,7 +38,7 @@ async function readingApi(body, entry) {
   return json;
 }
 
-export default function FullReadingCard({ clientResultId, partnerCode }) {
+export default function FullReadingCard({ clientResultId, partnerCode, onEntitled }) {
   const entry = getOwnedResult(clientResultId);
   const [phase, setPhase] = useState('idle'); // idle | buying | waiting | generating | ready | error
   const [reading, setReading] = useState('');
@@ -61,6 +61,7 @@ export default function FullReadingCard({ clientResultId, partnerCode }) {
       setReading(data.reading);
       setRegensLeft(data.regens_left ?? 0);
       setPhase('ready');
+      onEntitled?.();
       record('reading_view');
     } catch (e) {
       setError(e.status === 504
@@ -87,6 +88,7 @@ export default function FullReadingCard({ clientResultId, partnerCode }) {
       const status = await checkStatus();
       if (cancelled) return;
       if (status?.entitled) {
+        onEntitled?.();
         loadReading('get', !status.has_reading); // pair section only at first generation
       } else if (justPurchased) {
         // Webhook may lag the redirect — poll up to ~30s.
@@ -97,7 +99,10 @@ export default function FullReadingCard({ clientResultId, partnerCode }) {
           const s = await checkStatus();
           if (s?.entitled) {
             clearInterval(pollRef.current);
-            if (!cancelled) loadReading('get', !s.has_reading);
+            if (!cancelled) {
+              onEntitled?.();
+              loadReading('get', !s.has_reading);
+            }
           } else if (tries >= 10) {
             clearInterval(pollRef.current);
             if (!cancelled) {
@@ -145,7 +150,10 @@ export default function FullReadingCard({ clientResultId, partnerCode }) {
     return (
       <div className="card" style={{ marginTop: '1.5rem', padding: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '1.2rem' }}>Your Full Reading</h3>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <h3 style={{ fontSize: '1.2rem' }}>Your Full Reading</h3>
+            <span style={{ fontSize: '0.75rem', color: '#2dd4a8', fontWeight: 600 }}>✓ Purchased</span>
+          </div>
           {regensLeft > 0 && (
             <button
               onClick={() => loadReading('regen', Boolean(partnerCode))}
