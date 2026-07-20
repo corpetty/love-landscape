@@ -9,6 +9,8 @@
  * reading always matches the purchased result.
  */
 
+import { computeArchetype } from '../src/data/archetypes.js';
+
 const PARAMS = [
   { key: 'deepFriendships',    label: 'Deep friendships',              group: 0, desc: 'emotional depth in platonic bonds (valley)' },
   { key: 'romanticLove',       label: 'Romantic love',                 group: 0, desc: 'strength of romantic partnership as attractor (valley)' },
@@ -40,7 +42,7 @@ The Love Landscape maps intimacy along two axes: emotional-to-physical (horizont
 YOUR TASK — write a complete reading of 2,000–2,800 words with EXACTLY this structure (markdown ## headers):
 
 ## The Shape of Your Landscape
-An overview: the 3-4 defining features of this terrain, how they interact, what kind of relational life this landscape supports. (~250 words)
+Open by naming their terrain archetype (given below) and what it means — this is the frame the whole reading hangs on; use the archetype's name and imagery naturally, not as a label pasted on top. If a runner-up archetype is noted as close, acknowledge that they sit near that border and what the blend means. Then give an overview: the 3-4 defining features of this terrain, how they interact, what kind of relational life this landscape supports. (~250 words)
 
 ## Where Connection Lives
 ## The Physical Dimension
@@ -82,7 +84,19 @@ export function buildFullReadingPrompt(params, partnerParams = null) {
     `${g}: ${PARAMS.filter((p) => p.group === gi).map((p) => p.label).join(', ')}`,
   ).join('\n');
 
-  let userMessage = `THE READER'S LANDSCAPE:\n${paramLines(params)}\n\nSECTION-TO-PARAMETER MAP:\n${groupIndex}\n`;
+  const arch = computeArchetype(params);
+  let archBlock = '';
+  if (arch) {
+    const a = arch.archetype;
+    archBlock = `THE READER'S TERRAIN ARCHETYPE: ${a.name} — ${a.epithet}\n` +
+      `Essence: ${a.essence}\n${a.description}\n`;
+    if (arch.margin < 0.05 && arch.runnerUp) {
+      archBlock += `(They sit close to the border with ${arch.runnerUp.name} — a blend worth naming.)\n`;
+    }
+    archBlock += '\n';
+  }
+
+  let userMessage = `${archBlock}THE READER'S LANDSCAPE:\n${paramLines(params)}\n\nSECTION-TO-PARAMETER MAP:\n${groupIndex}\n`;
   if (partnerParams) {
     userMessage += `\nTHEIR PARTNER'S LANDSCAPE (for the final pair section):\n${paramLines(partnerParams)}\n`;
   }

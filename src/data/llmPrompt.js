@@ -1,5 +1,6 @@
 import { generateReading, generateSummary } from './interpretation.js';
 import { questions } from './questions.js';
+import { computeArchetype } from './archetypes.js';
 
 const PARAM_NAMES = [
   'deepFriendships',
@@ -83,6 +84,7 @@ YOUR ROLE:
 FORMAT (you MUST follow this):
 - Structure your response with 3-4 sections, each starting with a markdown header (##)
 - Use these section titles: "Your Terrain", "Where You Settle", "Where It Gets Steep", "The Frontier"
+- Open "Your Terrain" by naming their terrain archetype (given in the input) and what it captures, then deepen it with the parameters — use the archetype's imagery, don't just paste the label. If a runner-up archetype is noted as close, mention they sit near that border.
 - Each section: 2-4 sentences
 - Use **bold** for the most important phrases the reader should notice
 - Do NOT use bullet points or numbered lists — write in flowing prose`;
@@ -127,6 +129,15 @@ export function buildReadingPrompt(params, contextAnswers = {}) {
   const summary = generateSummary(params);
 
   let userMessage = `Here is someone's Love Landscape:\n\n`;
+  const arch = computeArchetype(params);
+  if (arch) {
+    const a = arch.archetype;
+    userMessage += `Terrain archetype: ${a.name} — ${a.epithet}. ${a.essence} ${a.description}\n`;
+    if (arch.margin < 0.05 && arch.runnerUp) {
+      userMessage += `(Close to the border with ${arch.runnerUp.name}.)\n`;
+    }
+    userMessage += `\n`;
+  }
   userMessage += `Summary: ${summary}\n\n`;
   userMessage += `Parameters:\n`;
 

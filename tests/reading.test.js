@@ -174,6 +174,17 @@ describe('api/reading generation', () => {
   });
 });
 
+describe('Full Reading prompt includes the archetype', () => {
+  it('leads the user message with the terrain archetype', async () => {
+    const { buildFullReadingPrompt } = await import('../api/_fullReadingPrompt.js');
+    // all-zeros params → a deterministic archetype ("The Volcano")
+    const { userMessage } = buildFullReadingPrompt(new Array(13).fill(0));
+    expect(userMessage).toMatch(/TERRAIN ARCHETYPE: The \w/);
+    expect(userMessage.indexOf('TERRAIN ARCHETYPE'))
+      .toBeLessThan(userMessage.indexOf("THE READER'S LANDSCAPE"));
+  });
+});
+
 describe('HTTP header hygiene (the em-dash incident)', () => {
   it('no api file passes non-Latin-1 characters in header-bearing lines', async () => {
     const fs = await import('fs');
