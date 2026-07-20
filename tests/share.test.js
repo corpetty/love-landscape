@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildSharePage, goneBody } from '../api/share.js';
+import { buildSharePage, buildArchetypePage, goneBody } from '../api/share.js';
+import { ARCHETYPES } from '../src/data/archetypes.js';
 
 // A miniature of the real dist/index.html head (tests must not depend on a
 // built dist/ — CI runs tests before build).
@@ -58,6 +59,22 @@ describe('buildSharePage', () => {
       origin: 'https://x.com"><script>alert(1)</script>',
     });
     expect(evil).not.toContain('"><script>alert(1)</script>');
+  });
+});
+
+describe('buildArchetypePage (folded /a/<key> path)', () => {
+  const arch = ARCHETYPES[0];
+  const html = buildArchetypePage(SHELL, { arch, origin: ORIGIN });
+
+  it('swaps in the archetype OG tags and points the image at ?archetype=', () => {
+    expect(html).toContain(`<title>${arch.name} — Love Landscape</title>`);
+    expect(html.match(/property="og:title"/g)).toHaveLength(1);
+    expect(html).toContain(`content="${ORIGIN}/api/og?archetype=${arch.key}"`);
+    expect(html).toContain(`content="${ORIGIN}/a/${arch.key}"`); // og:url + canonical
+  });
+
+  it('injects the __ARCHETYPE__ bootstrap for the SPA', () => {
+    expect(html).toContain(`window.__ARCHETYPE__=${JSON.stringify(arch.key)}`);
   });
 });
 

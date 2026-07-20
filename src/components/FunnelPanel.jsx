@@ -194,7 +194,6 @@ export default function FunnelPanel() {
                 <li>Accounts: <strong>{totals.accounts ?? 0}</strong></li>
                 <li>Paid purchases: <strong>{totals.purchases_paid ?? 0}</strong></li>
                 <li>Saved comparisons: <strong>{totals.comparisons_saved ?? 0}</strong></li>
-                <li>Fake-door signups: <strong>{totals.fakedoor_signups ?? 0}</strong></li>
                 <li>Research submissions: <strong>{totals.research_submissions ?? 0}</strong></li>
               </ul>
             </div>

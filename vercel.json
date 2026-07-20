@@ -6,12 +6,10 @@
     "api/webhook.js": { "maxDuration": 10 },
     "api/og.js": { "maxDuration": 10 },
     "api/coupon.js": { "maxDuration": 10 },
-    "api/fakedoor.js": { "maxDuration": 10 },
     "api/sync.js": { "maxDuration": 10 },
     "api/results.js": { "maxDuration": 10 },
     "api/admin.js": { "maxDuration": 10 },
     "api/share.js": { "maxDuration": 10, "includeFiles": "dist/index.html" },
-    "api/archetype.js": { "maxDuration": 10, "includeFiles": "dist/index.html" },
     "api/reading.js": { "maxDuration": 300 },
     "api/delete-account.js": { "maxDuration": 30 },
     "api/cron-maintenance.js": { "maxDuration": 60 }
@@ -21,7 +19,7 @@
   ],
   "rewrites": [
     { "source": "/r/:slug", "destination": "/api/share?slug=:slug" },
-    { "source": "/a/:key", "destination": "/api/archetype?key=:key" },
+    { "source": "/a/:key", "destination": "/api/share?archetype=:key" },
     { "source": "/archetypes", "destination": "/?screen=archetypes" }
   ],
   "headers": [

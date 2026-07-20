@@ -18,7 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { decodeParams } from '../src/data/encoding.js';
-import { computeArchetype } from '../src/data/archetypes.js';
+import { computeArchetype, ARCHETYPES } from '../src/data/archetypes.js';
 
 const SLUG_RE = /^[1-9A-HJ-NP-Za-km-z]{10}$/; // base58, 10 chars
 
@@ -82,6 +82,33 @@ export function buildSharePage(shell, { slug, code, origin }) {
   return html;
 }
 
+/**
+ * Per-archetype share page for /a/<key> (served by this same function to stay
+ * under the Hobby serverless-function limit). Injects window.__ARCHETYPE__ so
+ * the SPA opens the gallery focused on that type.
+ */
+export function buildArchetypePage(shell, { arch, origin }) {
+  const title = `${arch.name} — Love Landscape`;
+  const description = `${arch.epithet} — ${arch.essence} ${arch.description}`.slice(0, 300);
+  const pageUrl = `${origin}/a/${arch.key}`;
+  const imageUrl = `${origin}/api/og?archetype=${encodeURIComponent(arch.key)}`;
+
+  let html = shell;
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
+  html = setMeta(html, 'name', 'description', description);
+  html = setMeta(html, 'property', 'og:title', title);
+  html = setMeta(html, 'property', 'og:description', description);
+  html = setMeta(html, 'property', 'og:url', pageUrl);
+  html = setMeta(html, 'property', 'og:image', imageUrl);
+  html = setMeta(html, 'name', 'twitter:title', title);
+  html = setMeta(html, 'name', 'twitter:description', description);
+  html = setMeta(html, 'name', 'twitter:image', imageUrl);
+  html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/, `$1${esc(pageUrl)}$2`);
+  const bootstrap = `<script>window.__ARCHETYPE__=${JSON.stringify(arch.key)};</script>`;
+  html = html.replace('</head>', `  ${bootstrap}\n</head>`);
+  return html;
+}
+
 export function goneBody(origin) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -98,6 +125,26 @@ export default async function handler(req, res) {
 
   // Production canonicalizes to www (apex 307s there); og:image must not redirect.
   const origin = process.env.PUBLIC_ORIGIN || process.env.VITE_PUBLIC_URL || 'https://www.love-landscape.com';
+
+  // /a/<key> is rewritten here too (one function, Hobby-plan limit). No DB needed.
+  const archetypeKey = req.query?.archetype;
+  if (archetypeKey !== undefined) {
+    const arch = ARCHETYPES.find((a) => a.key === archetypeKey);
+    if (!arch) {
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300');
+      res.setHeader('Location', `${origin}/archetypes`);
+      return res.status(302).end();
+    }
+    const shell = loadShell();
+    if (!shell) {
+      console.error('share: SPA shell not found — check includeFiles in vercel.json');
+      return res.status(500).send('Page unavailable');
+    }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=86400');
+    return res.status(200).send(buildArchetypePage(shell, { arch, origin }));
+  }
+
   const slug = req.query?.slug;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
