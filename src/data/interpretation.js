@@ -151,14 +151,23 @@ const INTERPRETATIONS = [
 ];
 
 /**
+ * Bucket a 0–1 value into a score band. Single source of truth for the
+ * low/mid/high thresholds — shared by the interpretation text and the
+ * science mapping so they never disagree.
+ */
+export function scoreBand(value) {
+  if (value < 0.35) return 'low';
+  if (value > 0.65) return 'high';
+  return 'mid';
+}
+
+/**
  * Get a text interpretation for a single parameter.
  */
 function getInterpretation(paramIndex, value) {
   const interp = INTERPRETATIONS[paramIndex];
   if (!interp) return '';
-  if (value < 0.35) return interp.low;
-  if (value > 0.65) return interp.high;
-  return interp.mid;
+  return interp[scoreBand(value)];
 }
 
 /**
