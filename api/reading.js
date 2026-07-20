@@ -19,7 +19,7 @@
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { decodeParams } from '../src/data/encoding.js';
-import { buildFullReadingPrompt } from './_fullReadingPrompt.js';
+import { buildFullReadingPrompt, buildCompatibilityPrompt } from './_fullReadingPrompt.js';
 
 const MODEL_QUALITY = process.env.MANAGED_MODEL_QUALITY || 'anthropic/claude-sonnet-4-5';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -48,6 +48,7 @@ async function verifyJwt(req, supabase) {
 /** Owner check (JWT or bearer token) + paid purchase lookup, in one place. */
 async function authorize(req, supabase, body) {
   const { result_id, owner_token } = body;
+  const sku = body.sku === 'compatibility' ? 'compatibility' : 'full_reading';
   if (!result_id || !UUID_RE.test(result_id)) return { error: 'Invalid result_id', code: 400 };
 
   const { data: row } = await supabase
@@ -63,21 +64,28 @@ async function authorize(req, supabase, body) {
     (!row.user_id && owner_token && TOKEN_RE.test(owner_token) && row.owner_token_hash === sha256(owner_token));
   if (!owned) return { error: 'Not authorized', code: 403 };
 
+  // partner_code only exists after migration 006 — request it only for the
+  // compatibility sku (dormant until infra) so the full_reading path is
+  // unaffected on databases where the column isn't present yet.
+  const cols = 'id, status, reading_text, regen_count, created_at' +
+    (sku === 'compatibility' ? ', partner_code' : '');
   const { data: purchase } = await supabase
     .from('purchases')
-    .select('id, status, reading_text, regen_count, created_at')
+    .select(cols)
     .eq('result_id', result_id)
-    .eq('sku', 'full_reading')
+    .eq('sku', sku)
     .eq('status', 'paid')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  return { row, purchase: purchase || null };
+  return { row, purchase: purchase || null, sku };
 }
 
-async function generate(params, partnerParams) {
-  const { systemMessage, userMessage } = buildFullReadingPrompt(params, partnerParams);
+async function generate(params, partnerParams, sku = 'full_reading') {
+  const { systemMessage, userMessage } = sku === 'compatibility'
+    ? buildCompatibilityPrompt(params, partnerParams)
+    : buildFullReadingPrompt(params, partnerParams);
   const orResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -133,7 +141,7 @@ export default async function handler(req, res) {
 
   const auth = await authorize(req, supabase, body || {});
   if (auth.error) return res.status(auth.code).json({ error: auth.error });
-  const { row, purchase } = auth;
+  const { row, purchase, sku } = auth;
 
   if (op === 'status') {
     return res.json({
@@ -159,16 +167,21 @@ export default async function handler(req, res) {
   const params = decodeParams(row.code);
   if (!params) return res.status(500).json({ error: 'Stored result is unreadable' });
 
-  // Optional pair section: partner code supplied by the owner at generation time.
+  // Partner landscape: for a compatibility report it's fixed at purchase time
+  // (stored on the row); for a full reading it's an optional section the owner
+  // attaches at generation time.
   let partnerParams = null;
-  if (body.partner_code) {
+  if (sku === 'compatibility') {
+    partnerParams = purchase.partner_code ? decodeParams(purchase.partner_code) : null;
+    if (!partnerParams) return res.status(500).json({ error: 'This compatibility purchase is missing its partner landscape' });
+  } else if (body.partner_code) {
     partnerParams = decodeParams(body.partner_code);
     if (!partnerParams) return res.status(400).json({ error: 'Invalid partner code' });
   }
 
   let reading;
   try {
-    reading = await generate(params, partnerParams);
+    reading = await generate(params, partnerParams, sku);
   } catch (err) {
     // Purchase stays valid; the retry is free.
     return res.status(503).json({ error: 'Generation failed — your purchase is safe, please try again.', detail: err.message });

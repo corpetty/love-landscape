@@ -4,7 +4,7 @@ import CodeDisplay from './CodeDisplay.jsx';
 import RecommendationCards from './RecommendationCards.jsx';
 import ResearchContribution from './ResearchContribution.jsx';
 import ReadingsSection from './ReadingsSection.jsx';
-import PairReading from './PairReading.jsx';
+import CompatibilityReportCard from './CompatibilityReportCard.jsx';
 import PairCompatibility from './PairCompatibility.jsx';
 import { decodeParams, encodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
@@ -281,16 +281,12 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
       {/* Recommendations */}
       <RecommendationCards recommendations={recommendations} />
 
-      {/* AI pair reading — only shown when comparing */}
-      {partnerParams && (
-        <PairReading
-          params={params}
-          partnerParams={partnerParams}
-          code={code}
+      {/* Paid Compatibility Report — the deep pair reading (dormant until infra).
+          Only for device-owned results; the free hook above stands on its own. */}
+      {partnerParams && ownedEntry && (
+        <CompatibilityReportCard
+          clientResultId={ownedEntry.client_result_id}
           partnerCode={canonicalPartnerCode}
-          onOpenSettings={onOpenSettings}
-          onGetCredits={onOpenAccount}
-          onReadingGenerated={(text) => setAiReading((prev) => prev ? `${prev}\n\n---\n\n${text}` : text)}
         />
       )}
 

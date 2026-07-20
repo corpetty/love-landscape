@@ -116,20 +116,23 @@ export default async function handler(req, res) {
   const session = event.data.object;
   const { session_id: sessionId, credits, sku, result_id: resultId } = session.metadata || {};
 
-  // Full Reading purchase (F0.4): record the entitlement + funnel milestone.
+  // One-time reading purchases (Full Reading F0.4, and the Compatibility Report).
   // Generation happens on first api/reading.js request, not here.
-  if (sku === 'full_reading') {
+  if (sku === 'full_reading' || sku === 'compatibility') {
     if (!resultId) return res.status(200).json({ received: true, warning: 'Missing result_id' });
 
     const row = {
       stripe_session_id: session.id,
-      sku: 'full_reading',
+      sku,
       status: 'paid',
       amount_cents: session.amount_total ?? null,
       session_id: sessionId || null,
       result_id: resultId,
       payment_intent: typeof session.payment_intent === 'string' ? session.payment_intent : null,
     };
+    // partner_code lands with migration 006 and is only relevant to compatibility;
+    // adding it only for that sku keeps full_reading inserts unchanged pre-migration.
+    if (sku === 'compatibility') row.partner_code = session.metadata?.partner_code || null;
     const upsertOpts = { onConflict: 'stripe_session_id', ignoreDuplicates: true };
 
     let { data: inserted, error: upsertError } = await supabase
@@ -138,11 +141,11 @@ export default async function handler(req, res) {
     // Graceful degradation: if migration 005 (payment_intent column) isn't
     // applied yet, record the entitlement anyway — refund mapping can be
     // backfilled, a paying customer's access cannot wait on a migration.
-    if (upsertError && /payment_intent/.test(upsertError.message || '')) {
-      console.warn('purchases.payment_intent missing (run migration 005); recording without it');
-      const { payment_intent, ...withoutPi } = row;
+    if (upsertError && /(payment_intent|partner_code)/.test(upsertError.message || '')) {
+      console.warn('purchases optional column missing (run migration 005/006); recording without it');
+      const { payment_intent, partner_code, ...withoutOptional } = row;
       ({ data: inserted, error: upsertError } = await supabase
-        .from('purchases').upsert(withoutPi, upsertOpts).select('id').maybeSingle());
+        .from('purchases').upsert(withoutOptional, upsertOpts).select('id').maybeSingle());
     }
 
     if (upsertError) {
@@ -165,7 +168,7 @@ export default async function handler(req, res) {
         kind: 'purchase',
         person_key: resultRow?.user_id || sessionId || 'unknown',
         client_result_id: resultRow?.client_result_id || null,
-        meta: { sku: 'full_reading', amount_cents: session.amount_total ?? null },
+        meta: { sku, amount_cents: session.amount_total ?? null },
         is_dev: Boolean(resultRow?.is_dev),
         happened_at: new Date().toISOString(),
       });

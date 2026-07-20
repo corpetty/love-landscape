@@ -193,6 +193,19 @@ describe('Full Reading prompt includes the archetype', () => {
   });
 });
 
+describe('Compatibility report prompt', () => {
+  it('builds a two-person prompt naming the pairing and both landscapes', async () => {
+    const { buildCompatibilityPrompt } = await import('../api/_fullReadingPrompt.js');
+    const A = new Array(13).fill(0.2);
+    const B = new Array(13).fill(0.8);
+    const { systemMessage, userMessage } = buildCompatibilityPrompt(A, B);
+    expect(systemMessage).toContain('COMPATIBILITY');
+    expect(userMessage).toContain('TERRAIN PAIRING');
+    expect(userMessage).toMatch(/YOUR LANDSCAPE/);
+    expect(userMessage).toMatch(/THEIR LANDSCAPE/);
+  });
+});
+
 describe('HTTP header hygiene (the em-dash incident)', () => {
   it('no api file passes non-Latin-1 characters in header-bearing lines', async () => {
     const fs = await import('fs');
