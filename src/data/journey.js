@@ -96,6 +96,12 @@ export function initJourney() {
 /** Set by the shared-view CTA; consumed by the next assessment_start. */
 export function setPendingSource(src) { pendingSource = src; }
 
+// The sharer's code, stashed when a visitor takes the assessment from a share
+// link, so their results screen auto-loads the comparison (the round-trip).
+let pendingPartner = null;
+export function setPendingPartner(code) { pendingPartner = code; }
+export function consumePendingPartner() { const p = pendingPartner; pendingPartner = null; return p; }
+
 export function setUserId(id) { userId = id; }
 
 export function record(name, props = {}) {

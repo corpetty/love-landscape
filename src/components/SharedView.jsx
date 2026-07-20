@@ -4,7 +4,7 @@ import ArchetypeCard from './ArchetypeCard.jsx';
 import LandscapeReading from './LandscapeReading.jsx';
 import CodeDisplay from './CodeDisplay.jsx';
 import { computeArchetype } from '../data/archetypes.js';
-import { record, setPendingSource } from '../data/journey.js';
+import { record, setPendingSource, setPendingPartner } from '../data/journey.js';
 
 /**
  * Read-only view of a landscape someone shared at /r/<slug> (spec AD-1).
@@ -24,6 +24,9 @@ export default function SharedView({ params, code, onTakeAssessment, onScience }
     // path, and a mid-assessment refresh would re-serve the share page.
     try { window.history.replaceState({}, '', '/'); } catch { /* ignore */ }
     setPendingSource('share');
+    // Remember whose landscape this is, so the visitor's results auto-compare
+    // back against it — closing the share → take → compare loop.
+    if (code) setPendingPartner(code);
     onTakeAssessment();
   }
 

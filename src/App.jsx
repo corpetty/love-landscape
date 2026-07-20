@@ -19,7 +19,7 @@ import { computeParams } from './data/paramCompute.js';
 import { computeArchetype } from './data/archetypes.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
 import { getEffectiveConfig, adjustParams } from './data/llmClient.js';
-import { record, getVariant } from './data/journey.js';
+import { record, getVariant, setPendingPartner } from './data/journey.js';
 import { recordResult } from './data/resultsClient.js';
 
 const STORAGE_KEY = 'love-landscape-result';
@@ -154,6 +154,10 @@ export default function App() {
       if (decoded) {
         setParams(decoded);
         setCode(encodeParams(decoded));
+        // ?compare=<code> preloads a partner so a shared comparison link opens
+        // straight into the compatibility view (consumed by ResultsScreen).
+        const cmp = url.searchParams.get('compare');
+        if (cmp && decodeParams(cmp)) setPendingPartner(cmp);
         setScreen('results');
         return;
       }
