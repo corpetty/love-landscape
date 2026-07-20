@@ -13,7 +13,7 @@ export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResu
         fontSize: '1.05rem',
         lineHeight: 1.7,
       }}>
-        A 17-question assessment that maps your relational openness onto a 3D terrain.
+        A 19-question assessment that maps your relational openness onto a 3D terrain.
         See where your relationships naturally settle — and where the ridges are.
         Based on <a href="https://bayesianpersuasion.com/posts/the-shape-of-intimacy" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>The Shape of Intimacy</a>.
       </p>
@@ -50,7 +50,7 @@ export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResu
         color: 'var(--color-text-muted)',
         fontSize: '0.8rem',
       }}>
-        <Feature icon="17" label="questions" />
+        <Feature icon="19" label="questions" />
         <Feature icon="3D" label="terrain" />
         <Feature icon="∅" label="no account needed" />
       </div>

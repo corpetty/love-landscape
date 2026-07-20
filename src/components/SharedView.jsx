@@ -50,7 +50,7 @@ export default function SharedView({ params, code, onTakeAssessment }) {
           Take the assessment — see your own shape
         </button>
         <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.75rem' }}>
-          17 questions, about five minutes, free. Afterwards you can compare
+          19 questions, about five minutes, free. Afterwards you can compare
           your landscape with this one using its code below.
         </p>
       </div>

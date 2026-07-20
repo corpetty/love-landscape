@@ -2,7 +2,7 @@
  * 8 test personas for Love Landscape analysis.
  *
  * Each persona defines:
- *   - answers: question responses (q1–q17, each 0–1)
+ *   - answers: question responses (q1–q19, each 0–1)
  *   - expected: which params should be high/low/moderate
  *   - profile: qualitative description
  *   - terrainExpected: what the terrain should look like
@@ -58,6 +58,8 @@ that most people reserve for romantic partners.`,
       q15: 0.60, // Moderate playfulness
       q16: 0.70, // Give space, check in (secure)
       q17: 0.40, // Let it unfold naturally
+      q18: 0.30, // Romantic partnership a quiet presence — doesn't organize life around it
+      q19: 0.35, // Lovely when it happens, doesn't seek it out
     },
 
     expected: {
@@ -117,6 +119,8 @@ charming on the surface, but the play masks anxiety about whether he's enough.`,
       q15: 0.65, // Moderate-high playfulness
       q16: 0.00, // Panics and pursues (value=0)
       q17: 0.80, // Dives in (value=0.8)
+      q18: 0.95, // Romantic partnership a defining force
+      q19: 1.00, // One of the most important experiences in his life
     },
 
     expected: {
@@ -177,6 +181,8 @@ is narrow. Physical touch is reserved for the very few. Has thought about relati
       q15: 0.90, // Playfulness absolutely essential
       q16: 0.30, // Hurt, pulls away (value=0.3) — avoidant
       q17: 0.00, // Slow and careful
+      q18: 0.40, // Romantic pull present but held at a distance
+      q19: 0.35, // Lovely when it happens, doesn't seek it out
     },
 
     expected: {
@@ -237,6 +243,8 @@ well — including the conflict avoidance — and has made peace with some of th
       q15: 0.35, // Nice but not essential
       q16: 0.70, // Gives space, checks in (secure-ish)
       q17: 0.00, // Slow and careful
+      q18: 0.90, // Romantic partnership a defining force
+      q19: 1.00, // One of the most important experiences in her life
     },
 
     expected: {
@@ -297,6 +305,8 @@ in them. Physical affection is casual and frequent.`,
       q15: 0.85, // Playfulness essential
       q16: 0.55, // Middle — gives space (value≈0.5)
       q17: 0.80, // Dives in
+      q18: 0.45, // Romantic partnership appealing but not what he organizes life around (yet)
+      q19: 0.70, // A powerful current he makes room for
     },
 
     expected: {
@@ -356,6 +366,8 @@ comfortable with touch. She represents what a well-explored, well-integrated per
       q15: 0.55, // Moderate playfulness
       q16: 0.70, // Give space, check in (secure)
       q17: 0.40, // Let it unfold
+      q18: 0.65, // Solid romantic bond — important, not all-consuming
+      q19: 0.70, // A powerful current she makes room for
     },
 
     expected: {
@@ -416,6 +428,8 @@ in the body.`,
       q15: 0.95, // Playfulness absolutely essential
       q16: 0.55, // Middle ground on attachment
       q17: 0.80, // Dives in
+      q18: 0.50, // Romantic partnership moderate — connection lives in the body, not the label
+      q19: 0.35, // Lovely when it happens, doesn't chase the falling
     },
 
     expected: {
@@ -477,6 +491,8 @@ expressions of love, not fear.`,
       q15: 0.40, // Moderate playfulness
       q16: 0.70, // Give space, check in (secure within her frame)
       q17: 0.00, // Slow and careful
+      q18: 0.95, // Marriage is a defining force — devotion as sacred practice
+      q19: 1.00, // One of the most important experiences in her life
     },
 
     expected: {

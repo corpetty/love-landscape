@@ -59,8 +59,8 @@ function consumeShareBootstrap() {
 }
 
 const META_DESCRIPTIONS = {
-  intro: 'A 17-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.',
-  assessment: 'Answer 17 questions about how you experience intimacy, touch, trust, and connection.',
+  intro: 'A 19-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.',
+  assessment: 'Answer 19 questions about how you experience intimacy, touch, trust, and connection.',
   loadCode: 'Load a previously saved Love Landscape code to view your relational terrain.',
   refining: 'AI is refining your relational landscape based on your context...',
   results: 'Your personalized 3D terrain map of relational intimacy.',

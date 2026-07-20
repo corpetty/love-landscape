@@ -53,6 +53,28 @@ export const questions = [
     ],
   },
   {
+    id: 'q18',
+    type: 'slider',
+    text: 'How strong is the pull toward romantic partnership in your life?',
+    left: 'A quiet presence',
+    right: 'A defining force',
+    helperText: 'Romantic partnership here means a bond that combines emotional depth, physical intimacy, and some shared life — whatever its structure, and however many such bonds you\'re open to. Is that pull central to the life you want, or peripheral?',
+    articleConcept: 'Romantic love',
+  },
+  {
+    id: 'q19',
+    type: 'scenario',
+    text: 'Think about falling in love — the charge of it, the wanting to weave your life together with someone\'s.',
+    helperText: 'This is about romantic passion itself — whether that experience is something you seek, savor, or could happily live without. No answer is better; some of the richest landscapes have quiet romantic valleys.',
+    articleConcept: 'Romantic love',
+    options: [
+      { label: 'That pull isn\'t really part of how I connect', value: 0 },
+      { label: 'Lovely when it happens, but I don\'t seek it out', value: 0.35 },
+      { label: 'A powerful current I make room for', value: 0.7 },
+      { label: 'One of the most important experiences in my life', value: 1.0 },
+    ],
+  },
+  {
     id: 'q6',
     type: 'slider',
     text: 'How important is exclusivity in your intimate relationships?',

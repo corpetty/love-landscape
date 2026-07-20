@@ -254,7 +254,7 @@ function AssessmentIntro({ onStart, onBack }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         <InfoRow
           step="1"
-          title="Answer 17 questions"
+          title="Answer 19 questions"
           body="Sliders and scenarios that map where your relational openness naturally settles."
         />
         <InfoRow

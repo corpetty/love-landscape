@@ -19,13 +19,13 @@ const PARAM_NAMES = [
 
 const ADJUSTMENT_SYSTEM = `You are a parameter calibration engine for the Love Landscape assessment.
 
-The Love Landscape maps intimacy along 13 parameters (each 0.0–1.0). A user has completed a 17-question assessment and their answers produced baseline parameter values via weighted formulas. However, they also wrote free-text context explaining their answers in more detail.
+The Love Landscape maps intimacy along 13 parameters (each 0.0–1.0). A user has completed a 19-question assessment and their answers produced baseline parameter values via weighted formulas. However, they also wrote free-text context explaining their answers in more detail.
 
 Your job: read their context carefully and ADJUST the parameter values to better reflect what they actually mean. The baseline formulas are blunt — your adjustments incorporate nuance.
 
 THE 13 PARAMETERS:
 1. deepFriendships (0-1) — emotional depth in platonic bonds. 0=surface warmth, 1=profoundly deep
-2. romanticLove (0-1) — strength of romantic partnership as attractor. 0=quiet, 1=dominant
+2. romanticLove (0-1) — pull toward combined-depth romantic partnership (emotional + physical + shared life), independent of exclusivity or structure. 0=quiet, 1=dominant
 3. tenderMiddle (0-1) — comfort in ambiguous space between friendship and romance. 0=needs clarity, 1=natural
 4. casualTouch (0-1) — ease with non-romantic physical affection. 0=reserved, 1=very natural
 5. emptyPhysBarrier (0-1) — need for emotional depth before physical intimacy. 0=physical has own value, 1=emotional grounding required
