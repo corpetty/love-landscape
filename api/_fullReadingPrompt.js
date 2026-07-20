@@ -10,6 +10,7 @@
  */
 
 import { computeArchetype } from '../src/data/archetypes.js';
+import { sciencePromptContext } from '../src/data/scienceMap.js';
 
 const PARAMS = [
   { key: 'deepFriendships',    label: 'Deep friendships',              group: 0, desc: 'emotional depth in platonic bonds (valley)' },
@@ -61,6 +62,7 @@ RULES:
 - Percentages may be referenced sparingly ("your uncertainty tolerance sits near the top of the scale"), never as a data dump
 - Warm but honest; complexity is the product — don't flatten it
 - Use the terrain metaphor naturally throughout
+- Where it deepens a point, name the psychological framework a dimension draws on (see SCIENTIFIC GROUNDING) — e.g. "in attachment terms (the ECR-R), you read as secure." Weave it into 3-5 places across the reading, not every dimension. Only cite an instrument for dimensions marked "Grounded in research" or "Related to research"; for "Our own contribution" or "Mapping in progress", present it as our own lens, not established measurement. Never overstate the science.
 - **Bold** the sentences that matter most
 - No bullet points except in Conversations Worth Having`;
 
@@ -96,7 +98,9 @@ export function buildFullReadingPrompt(params, partnerParams = null) {
     archBlock += '\n';
   }
 
-  let userMessage = `${archBlock}THE READER'S LANDSCAPE:\n${paramLines(params)}\n\nSECTION-TO-PARAMETER MAP:\n${groupIndex}\n`;
+  let userMessage = `${archBlock}THE READER'S LANDSCAPE:\n${paramLines(params)}\n\n` +
+    `SCIENTIFIC GROUNDING (framework each dimension draws on + how this reader reads in it; honor the tier in brackets):\n${sciencePromptContext(params)}\n\n` +
+    `SECTION-TO-PARAMETER MAP:\n${groupIndex}\n`;
   if (partnerParams) {
     userMessage += `\nTHEIR PARTNER'S LANDSCAPE (for the final pair section):\n${paramLines(partnerParams)}\n`;
   }

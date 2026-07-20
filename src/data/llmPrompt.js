@@ -1,6 +1,7 @@
 import { generateReading, generateSummary } from './interpretation.js';
 import { questions } from './questions.js';
 import { computeArchetype } from './archetypes.js';
+import { sciencePromptContext } from './scienceMap.js';
 
 const PARAM_NAMES = [
   'deepFriendships',
@@ -80,6 +81,7 @@ YOUR ROLE:
 - Use the terrain metaphor naturally (valleys, ridges, passes, fog, frontier)
 - Keep it under 300 words
 - Don't list parameters mechanically — weave them into a narrative
+- You may name the research framework behind a dimension once or twice where it lands naturally (see SCIENTIFIC GROUNDING) — e.g. "in attachment terms, you read as secure." Only cite instruments for dimensions marked "Grounded in research" or "Related to research"; keep it light and never overclaim.
 
 FORMAT (you MUST follow this):
 - Structure your response with 3-4 sections, each starting with a markdown header (##)
@@ -144,6 +146,8 @@ export function buildReadingPrompt(params, contextAnswers = {}) {
   for (const item of reading) {
     userMessage += `- ${item.short}: ${Math.round(item.value * 100)}% — ${item.text}\n`;
   }
+
+  userMessage += `\nSCIENTIFIC GROUNDING (framework each dimension draws on + how they read in it; honor the tier in brackets):\n${sciencePromptContext(params)}\n`;
 
   const contextEntries = Object.entries(contextAnswers).filter(([, v]) => v && v.trim());
   if (contextEntries.length > 0) {

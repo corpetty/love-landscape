@@ -183,6 +183,14 @@ describe('Full Reading prompt includes the archetype', () => {
     expect(userMessage.indexOf('TERRAIN ARCHETYPE'))
       .toBeLessThan(userMessage.indexOf("THE READER'S LANDSCAPE"));
   });
+
+  it('includes the tiered scientific grounding block', async () => {
+    const { buildFullReadingPrompt } = await import('../api/_fullReadingPrompt.js');
+    const { userMessage } = buildFullReadingPrompt(new Array(13).fill(0.5));
+    expect(userMessage).toContain('SCIENTIFIC GROUNDING');
+    // honesty tiers must be present so the model knows what it can cite
+    expect(userMessage).toMatch(/Grounded in research|Related to research|Our own contribution|Mapping in progress/);
+  });
 });
 
 describe('HTTP header hygiene (the em-dash incident)', () => {

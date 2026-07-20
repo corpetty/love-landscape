@@ -1,4 +1,5 @@
 import { ARTICLE_URL } from './articleContent.js';
+import { scoreBand, generateReading } from './interpretation.js';
 
 /**
  * Per-dimension scientific grounding, surfaced in the reading.
@@ -25,6 +26,21 @@ export const SCIENCE_TIERS = {
   frontier: { label: 'Our own contribution', blurb: 'little prior research — original to this framework' },
   mapping:  { label: 'Mapping in progress', blurb: 'established literature exists; we haven\'t formally mapped it yet' },
 };
+
+/**
+ * Format the per-dimension grounding as prompt context for the LLM readings.
+ * Each line gives the dimension, the instrument/construct it maps to, the
+ * honesty tier, and how this reader's score reads in that framework — so the
+ * model can name the science accurately (and only where it's actually grounded).
+ */
+export function sciencePromptContext(params) {
+  const reading = generateReading(params);
+  return SCIENCE_MAP.map((s, i) => {
+    const band = scoreBand(params[i] ?? 0.5);
+    return `- ${reading[i].name} → ${s.instrument} (${s.construct}) ` +
+      `[${SCIENCE_TIERS[s.tier].label}]: reads as ${s.maps[band]}`;
+  }).join('\n');
+}
 
 export const SCIENCE_MAP = [
   { // P0 Deep friendships
