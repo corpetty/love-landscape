@@ -64,17 +64,26 @@ async function authorize(req, supabase, body) {
     (!row.user_id && owner_token && TOKEN_RE.test(owner_token) && row.owner_token_hash === sha256(owner_token));
   if (!owned) return { error: 'Not authorized', code: 403 };
 
-  // partner_code only exists after migration 006 — request it only for the
-  // compatibility sku (dormant until infra) so the full_reading path is
-  // unaffected on databases where the column isn't present yet.
+  // partner_code only exists after migration 007 — request it only for the
+  // compatibility sku so the full_reading path is unaffected on databases where
+  // the column isn't present yet.
   const cols = 'id, status, reading_text, regen_count, created_at' +
     (sku === 'compatibility' ? ', partner_code' : '');
-  const { data: purchase } = await supabase
+  let query = supabase
     .from('purchases')
     .select(cols)
     .eq('result_id', result_id)
     .eq('sku', sku)
-    .eq('status', 'paid')
+    .eq('status', 'paid');
+
+  // A compatibility purchase is entitled per PAIRING: match the specific partner
+  // so each comparison has its own report (no partner → not entitled here).
+  if (sku === 'compatibility') {
+    if (!body.partner_code) return { row, purchase: null, sku };
+    query = query.eq('partner_code', body.partner_code);
+  }
+
+  const { data: purchase } = await query
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();

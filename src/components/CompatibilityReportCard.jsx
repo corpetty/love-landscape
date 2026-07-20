@@ -52,15 +52,15 @@ export default function CompatibilityReportCard({ clientResultId, partnerCode })
   const pollRef = useRef(null);
 
   const checkStatus = useCallback(async () => {
-    if (!entry?.result_id) return null;
-    try { return await readingApi({ op: 'status' }, entry); } catch { return null; }
-  }, [entry?.result_id]);
+    if (!entry?.result_id || !partnerCode) return null;
+    try { return await readingApi({ op: 'status', partner_code: partnerCode }, entry); } catch { return null; }
+  }, [entry?.result_id, partnerCode]);
 
   const loadReading = useCallback(async (op = 'get') => {
     setPhase('generating');
     setError('');
     try {
-      const data = await readingApi({ op }, entry);
+      const data = await readingApi({ op, partner_code: partnerCode }, entry);
       setReading(data.reading);
       setRegensLeft(data.regens_left ?? 0);
       setPhase('ready');
@@ -72,7 +72,7 @@ export default function CompatibilityReportCard({ clientResultId, partnerCode })
       setPhase(e.status === 402 ? 'idle' : 'error');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entry?.result_id]);
+  }, [entry?.result_id, partnerCode]);
 
   // On mount: check entitlement; handle the post-checkout return.
   useEffect(() => {

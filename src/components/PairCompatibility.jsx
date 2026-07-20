@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { computeArchetype } from '../data/archetypes.js';
 import { generateCompatibility } from '../data/recommendations.js';
+import { getComparisonName, setComparisonName } from '../data/comparisons.js';
 
 /**
  * The compatibility headline shown when two landscapes are compared: the archetype
@@ -9,10 +10,20 @@ import { generateCompatibility } from '../data/recommendations.js';
  */
 export default function PairCompatibility({ params, partnerParams, code, partnerCode }) {
   const [copied, setCopied] = useState(false);
+  const [name, setName] = useState(() => (partnerCode ? getComparisonName(partnerCode) : null));
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
   const a = computeArchetype(params)?.archetype;
   const b = computeArchetype(partnerParams)?.archetype;
   const compat = generateCompatibility(params, partnerParams);
   if (!a || !b || !compat) return null;
+
+  function saveName() {
+    const v = draft.trim();
+    setComparisonName(partnerCode, v);
+    setName(v || null);
+    setEditing(false);
+  }
 
   function shareComparison() {
     if (!code || !partnerCode) return;
@@ -25,6 +36,38 @@ export default function PairCompatibility({ params, partnerParams, code, partner
 
   return (
     <div className="card" style={{ padding: '1.4rem 1.35rem', marginBottom: '1.25rem', textAlign: 'center' }}>
+      {/* Nameable comparison label */}
+      {partnerCode && (
+        <div style={{ marginBottom: '0.6rem' }}>
+          {editing ? (
+            <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false); }}
+                placeholder="e.g. Alex, Mom, Jordan"
+                maxLength={40}
+                style={{
+                  padding: '0.3rem 0.6rem', borderRadius: '6px',
+                  border: '1px solid var(--color-border)', background: 'var(--color-bg-card)',
+                  fontSize: '0.85rem', minWidth: 0, flex: '0 1 200px',
+                }}
+              />
+              <button className="btn-secondary" onClick={saveName} style={{ fontSize: '0.78rem', padding: '0.25rem 0.6rem' }}>Save</button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setDraft(name || ''); setEditing(true); }}
+              style={{ fontSize: '0.85rem', color: name ? 'var(--color-text)' : 'var(--color-accent)', fontWeight: name ? 600 : 400 }}
+              title="Name this comparison"
+            >
+              {name ? `📌 ${name}` : '＋ Name this comparison'}
+            </button>
+          )}
+        </div>
+      )}
+
       <span style={{
         display: 'inline-block',
         fontSize: '0.68rem',

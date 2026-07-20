@@ -8,7 +8,7 @@ import CompatibilityReportCard from './CompatibilityReportCard.jsx';
 import PairCompatibility from './PairCompatibility.jsx';
 import { decodeParams, encodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
-import { addRecentComparison, getRecentComparisons } from '../data/comparisons.js';
+import { addRecentComparison, getRecentComparisons, comparisonDisplayName } from '../data/comparisons.js';
 import { computeArchetype } from '../data/archetypes.js';
 import { consumePendingPartner, record } from '../data/journey.js';
 import AuthPanel from './AuthPanel.jsx';
@@ -271,7 +271,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
                 className="btn-secondary"
                 style={{ fontSize: '0.78rem', padding: '0.25rem 0.6rem' }}
               >
-                {c.label}
+                {comparisonDisplayName(c)}
               </button>
             ))}
           </div>
@@ -285,6 +285,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           Only for device-owned results; the free hook above stands on its own. */}
       {partnerParams && ownedEntry && (
         <CompatibilityReportCard
+          key={canonicalPartnerCode}
           clientResultId={ownedEntry.client_result_id}
           partnerCode={canonicalPartnerCode}
         />
