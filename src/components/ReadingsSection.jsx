@@ -14,7 +14,7 @@ import { ARTICLE_URL } from '../data/articleContent.js';
  */
 export default function ReadingsSection({
   params, code, contextAnswers, ownedEntry, fullReadingPartnerCode,
-  onOpenSettings, onGetCredits, onReadingGenerated,
+  onOpenSettings, onGetCredits, onReadingGenerated, onScience,
 }) {
   const [fullReadingOwned, setFullReadingOwned] = useState(false);
   const handleEntitled = useCallback(() => setFullReadingOwned(true), []);
@@ -41,7 +41,22 @@ export default function ReadingsSection({
         </a>
       </div>
 
-      <LandscapeReading params={params} hideTitle />
+      <LandscapeReading params={params} hideTitle onScience={onScience} />
+
+      {onScience && (
+        <button
+          onClick={() => onScience()}
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--color-accent)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+            marginTop: '0.6rem',
+          }}
+        >
+          See the science behind your reading →
+        </button>
+      )}
 
       <EnhancedReading
         params={params}

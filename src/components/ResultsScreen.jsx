@@ -12,7 +12,7 @@ import SharePageCard from './SharePageCard.jsx';
 import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
 import { getOwnedResultByCode } from '../data/resultsClient.js';
 
-export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount }) {
+export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount, onScience }) {
   const wasRefined = baseParams && params !== baseParams &&
     baseParams.some((v, i) => Math.abs(v - params[i]) > 0.001);
   const [partnerCode, setPartnerCode] = useState('');
@@ -151,6 +151,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
         onOpenSettings={onOpenSettings}
         onGetCredits={onOpenAccount}
         onReadingGenerated={setAiReading}
+        onScience={onScience}
       />
 
       {/* Save & Share — code, account save, and the public page in one place */}

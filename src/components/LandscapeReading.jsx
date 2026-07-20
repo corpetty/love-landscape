@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { generateReading, generateSummary } from '../data/interpretation.js';
+import { generateReading, generateSummary, scoreBand } from '../data/interpretation.js';
 import { ARTICLE_URL } from '../data/articleContent.js';
+import { SCIENCE_MAP, SCIENCE_TIERS } from '../data/scienceMap.js';
 
-export default function LandscapeReading({ params, hideTitle = false }) {
+export default function LandscapeReading({ params, hideTitle = false, onScience }) {
   const [expanded, setExpanded] = useState(false);
   const reading = generateReading(params);
   const summary = generateSummary(params);
@@ -74,7 +75,7 @@ export default function LandscapeReading({ params, hideTitle = false }) {
           overflowY: 'auto',
         }}>
           {reading.map((item, i) => (
-            <ParameterCard key={i} item={item} />
+            <ParameterCard key={i} item={item} index={i} onScience={onScience} />
           ))}
         </div>
       )}
@@ -82,8 +83,10 @@ export default function LandscapeReading({ params, hideTitle = false }) {
   );
 }
 
-function ParameterCard({ item }) {
+function ParameterCard({ item, index, onScience }) {
   const [showDef, setShowDef] = useState(false);
+  const science = SCIENCE_MAP[index];
+  const band = scoreBand(item.value);
 
   return (
     <div className="card" style={{ padding: '0.85rem 1rem' }}>
@@ -130,6 +133,56 @@ function ParameterCard({ item }) {
           opacity: 0.85,
         }}>
           {item.definition}
+        </p>
+      )}
+
+      {/* Science grounding — the construct this maps to and how this score reads in it */}
+      {science && (
+        <p style={{
+          fontSize: '0.75rem',
+          color: 'var(--color-text-muted)',
+          lineHeight: 1.55,
+          marginBottom: '0.5rem',
+        }}>
+          <span style={{ opacity: 0.7 }}>🔬 </span>
+          Maps to <strong style={{ color: 'var(--color-text)', fontWeight: 600 }}>{science.instrument}</strong>
+          {' '}— you read as <em>{science.maps[band]}</em>.
+          {' '}
+          <span
+            title={SCIENCE_TIERS[science.tier].blurb}
+            style={{
+              display: 'inline-block',
+              fontSize: '0.62rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+              padding: '1px 6px',
+              borderRadius: '5px',
+              background: 'rgba(127,119,221,0.1)',
+              color: 'var(--color-accent)',
+              verticalAlign: 'middle',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {SCIENCE_TIERS[science.tier].label}
+          </span>
+          {onScience && (
+            <>
+              {' · '}
+              <button
+                onClick={() => onScience(index)}
+                style={{
+                  fontSize: '0.72rem',
+                  color: 'var(--color-accent)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                the science →
+              </button>
+            </>
+          )}
         </p>
       )}
 

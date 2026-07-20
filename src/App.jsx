@@ -10,6 +10,7 @@ import RefiningScreen from './components/RefiningScreen.jsx';
 import MyLandscapes from './components/MyLandscapes.jsx';
 import SharedView from './components/SharedView.jsx';
 import ArchetypesGallery from './components/ArchetypesGallery.jsx';
+import ScienceReading from './components/ScienceReading.jsx';
 import Footer from './components/Footer.jsx';
 import Header from './components/Header.jsx';
 import AccountScreen from './components/AccountScreen.jsx';
@@ -108,6 +109,8 @@ export default function App() {
   const [refineError, setRefineError] = useState(null);
   const [sharedData, setSharedData] = useState(null); // { slug, code, params } from /r/<slug>
   const [archetypeFocus, setArchetypeFocus] = useState(null); // archetype key from /a/<key>
+  const [scienceFocus, setScienceFocus] = useState(null); // dimension index for the science view
+  const [scienceReturn, setScienceReturn] = useState('results'); // screen to return to from science view
   // Set at assessment completion, consumed once when the final result renders:
   // the server-side create (spec AD-8) fires with the code the user actually sees.
   const pendingResultRef = useRef(null);
@@ -324,6 +327,12 @@ export default function App() {
   function goHome() { setShowAbout(false); setScreen('intro'); }
   function goLandscapes() { setShowAbout(false); setScreen('landscapes'); }
   function goArchetypes() { setShowAbout(false); setArchetypeFocus(null); setScreen('archetypes'); }
+  function goScience(focusIndex) {
+    setShowAbout(false);
+    setScienceReturn(screen === 'sharedView' ? 'sharedView' : 'results');
+    setScienceFocus(typeof focusIndex === 'number' ? focusIndex : null);
+    setScreen('science');
+  }
   function goAccount() { setShowAbout(false); setScreen('account'); }
 
   const header = (
@@ -383,6 +392,16 @@ export default function App() {
           params={sharedData?.params}
           code={sharedData?.code}
           onTakeAssessment={handleBegin}
+          onScience={goScience}
+        />
+      );
+      break;
+    case 'science':
+      content = (
+        <ScienceReading
+          params={params || sharedData?.params}
+          focusIndex={scienceFocus}
+          onBack={() => setScreen(scienceReturn)}
         />
       );
       break;
@@ -416,6 +435,7 @@ export default function App() {
           onAbout={() => setShowAbout(true)}
           onOpenSettings={() => setShowSettings(true)}
           onOpenAccount={goAccount}
+          onScience={goScience}
         />
       );
       break;

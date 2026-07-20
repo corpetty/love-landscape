@@ -11,7 +11,7 @@ import { record, setPendingSource } from '../data/journey.js';
  * Deliberately never touches the visitor's own saved result: owner state,
  * localStorage persistence, and URL rewriting all stay untouched.
  */
-export default function SharedView({ params, code, onTakeAssessment }) {
+export default function SharedView({ params, code, onTakeAssessment, onScience }) {
   useEffect(() => {
     const arch = computeArchetype(params);
     record('share_page_view', arch ? { archetype: arch.archetype.key } : {});
@@ -44,7 +44,7 @@ export default function SharedView({ params, code, onTakeAssessment }) {
       <ArchetypeCard params={params} style={{ marginTop: '1.5rem' }} />
 
       <div style={{ marginTop: '1.5rem' }}>
-        <LandscapeReading params={params} />
+        <LandscapeReading params={params} onScience={onScience} />
       </div>
 
       <div className="card" style={{ marginTop: '1.5rem', padding: '1.25rem', textAlign: 'center' }}>
