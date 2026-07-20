@@ -123,8 +123,10 @@ export function goneBody(origin) {
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  // Production canonicalizes to www (apex 307s there); og:image must not redirect.
-  const origin = process.env.PUBLIC_ORIGIN || process.env.VITE_PUBLIC_URL || 'https://www.love-landscape.com';
+  // Production canonicalizes to www (apex 307s there); og:image must not redirect,
+  // so coerce a bare apex origin to www (leaves localhost/preview hosts untouched).
+  const origin = (process.env.PUBLIC_ORIGIN || process.env.VITE_PUBLIC_URL || 'https://www.love-landscape.com')
+    .replace('://love-landscape.com', '://www.love-landscape.com');
 
   // /a/<key> is rewritten here too (one function, Hobby-plan limit). No DB needed.
   const archetypeKey = req.query?.archetype;
