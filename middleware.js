@@ -27,9 +27,19 @@ const CRAWLER_UA_PATTERNS = [
   'Iframely',
   'Pinterestbot',
   'TelegramBot',
+  'redditbot',
+  'Bluesky',        // Bluesky Cardyb/1.1
+  'Mastodon',       // Mastodon/4.x instances fetch previews themselves
+  'meta-externalagent', // Meta's newer crawler (Threads, FB)
+  'Snapchat',
+  'SkypeUriPreview',
+  'Viber',
+  'LineBot',
 ];
 
-const BASE_URL = 'https://love-landscape.com';
+// www is the canonical host in production (apex 307s to it) — crawlers must not
+// be sent through a redirect to reach the OG image.
+const BASE_URL = 'https://www.love-landscape.com';
 
 export const config = {
   matcher: '/',
@@ -124,12 +134,15 @@ const PARAM_LABELS = [
 
 function getDescription(code) {
   try {
-    const payload = code.startsWith('L2_') ? code.slice(3) : code.startsWith('L1_') ? code.slice(3) : null;
+    const isV2 = code.startsWith('L2_');
+    const payload = isV2 || code.startsWith('L1_') ? code.slice(3) : null;
     if (!payload) return fallbackDescription();
 
     let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
     while (b64.length % 4 !== 0) b64 += '=';
     const binary = atob(b64);
+    // L2 codes carry exactly 13 param bytes, L1 exactly 9 — anything else is garbage
+    if (binary.length !== (isV2 ? 13 : 9)) return fallbackDescription();
 
     const params = [];
     for (let i = 0; i < binary.length; i++) {
@@ -141,12 +154,12 @@ function getDescription(code) {
     const top3 = indexed.sort((a, b) => b.value - a.value).slice(0, 3);
     const topNames = top3.map((d) => d.label.toLowerCase()).join(', ');
 
-    return `A personalized relational landscape. Strongest dimensions: ${topNames}. Take the 17-question assessment to map your own terrain.`;
+    return `A personalized relational landscape. Strongest dimensions: ${topNames}. Take the 19-question assessment to map your own terrain.`;
   } catch {
     return fallbackDescription();
   }
 }
 
 function fallbackDescription() {
-  return 'A 17-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.';
+  return 'A 19-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.';
 }

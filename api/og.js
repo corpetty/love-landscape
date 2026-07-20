@@ -22,14 +22,18 @@ export default function handler(req) {
   let params = null;
   if (code) {
     try {
-      const payload = code.startsWith('L2_') ? code.slice(3) : code.startsWith('L1_') ? code.slice(3) : null;
+      const isV2 = code.startsWith('L2_');
+      const payload = isV2 || code.startsWith('L1_') ? code.slice(3) : null;
       if (payload) {
         let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
         while (b64.length % 4 !== 0) b64 += '=';
         const binary = atob(b64);
-        params = [];
-        for (let i = 0; i < binary.length; i++) {
-          params.push(binary.charCodeAt(i) / 255);
+        // L2 codes carry exactly 13 param bytes, L1 exactly 9 — anything else is garbage
+        if (binary.length === (isV2 ? 13 : 9)) {
+          params = [];
+          for (let i = 0; i < binary.length; i++) {
+            params.push(binary.charCodeAt(i) / 255);
+          }
         }
       }
     } catch { /* ignore decode errors, fall back to default */ }
@@ -160,7 +164,7 @@ export default function handler(req) {
                     maxWidth: '600px',
                     lineHeight: 1.6,
                   },
-                  children: '17 questions · 3D terrain · No account needed',
+                  children: '19 questions · 3D terrain · No account needed',
                 },
               },
           {

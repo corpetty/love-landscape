@@ -89,6 +89,7 @@ export function goneBody(origin) {
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
+  // Production canonicalizes to www (apex 307s there); og:image must not redirect.
   const origin = process.env.PUBLIC_ORIGIN || process.env.VITE_PUBLIC_URL || 'https://www.love-landscape.com';
   const slug = req.query?.slug;
 

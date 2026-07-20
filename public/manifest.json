@@ -1,7 +1,7 @@
 {
   "name": "Love Landscape",
   "short_name": "Love Landscape",
-  "description": "A 17-question assessment that maps your relational openness onto a 3D terrain.",
+  "description": "A 19-question assessment that maps your relational openness onto a 3D terrain.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#faf9f6",
@@ -11,6 +11,16 @@
       "src": "/favicon.svg",
       "type": "image/svg+xml",
       "sizes": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ]
 }
