@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { computeArchetype } from '../data/archetypes.js';
 import { generateCompatibility } from '../data/recommendations.js';
 import { getComparisonName, setComparisonName } from '../data/comparisons.js';
@@ -13,6 +13,14 @@ export default function PairCompatibility({ params, partnerParams, code, partner
   const [name, setName] = useState(() => (partnerCode ? getComparisonName(partnerCode) : null));
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+
+  // Re-sync when the comparison changes: without this the name state (a
+  // useState initializer that runs once) would stick from the previous pairing.
+  useEffect(() => {
+    setName(partnerCode ? getComparisonName(partnerCode) : null);
+    setEditing(false);
+    setCopied(false);
+  }, [partnerCode]);
   const a = computeArchetype(params)?.archetype;
   const b = computeArchetype(partnerParams)?.archetype;
   const compat = generateCompatibility(params, partnerParams);

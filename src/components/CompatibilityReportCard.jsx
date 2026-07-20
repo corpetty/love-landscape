@@ -74,9 +74,14 @@ export default function CompatibilityReportCard({ clientResultId, partnerCode })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry?.result_id, partnerCode]);
 
-  // On mount: check entitlement; handle the post-checkout return.
+  // Check entitlement per pairing; also re-runs when the comparison changes
+  // (no remount key — a keyed element among conditional siblings duplicates).
   useEffect(() => {
-    if (!PRICE_LABEL || !entry?.result_id) return undefined;
+    if (!PRICE_LABEL || !entry?.result_id || !partnerCode) return undefined;
+    // Reset state so a previous pairing's report doesn't linger on switch.
+    setPhase('idle');
+    setReading('');
+    setError('');
     let cancelled = false;
 
     const url = new URL(window.location.href);
@@ -113,7 +118,7 @@ export default function CompatibilityReportCard({ clientResultId, partnerCode })
 
     return () => { cancelled = true; if (pollRef.current) clearInterval(pollRef.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entry?.result_id]);
+  }, [entry?.result_id, partnerCode]);
 
   // Dormant until infra, and only for device-owned results with a partner loaded.
   if (!PRICE_LABEL || !entry || !partnerCode) return null;

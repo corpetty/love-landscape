@@ -285,7 +285,6 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           Only for device-owned results; the free hook above stands on its own. */}
       {partnerParams && ownedEntry && (
         <CompatibilityReportCard
-          key={canonicalPartnerCode}
           clientResultId={ownedEntry.client_result_id}
           partnerCode={canonicalPartnerCode}
         />
