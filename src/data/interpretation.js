@@ -7,7 +7,7 @@ const PARAM_LABELS = [
   {
     name: 'Romantic love',
     short: 'Romantic bond',
-    definition: 'The strength of romantic partnership as an attractor in your landscape — how central romantic love is to your relational identity.',
+    definition: 'The strength of romantic partnership as an attractor in your landscape — the pull toward bonds that combine emotional depth, physical intimacy, and shared life. Independent of exclusivity or structure; that\'s Openness.',
   },
   {
     name: 'Tender middle',
@@ -140,8 +140,11 @@ const INTERPRETATIONS = [
     high: 'Playfulness is central to how you experience closeness. Laughter and lightness are how you know you\'re safe.',
   },
   // P12: attachmentSecurity
+  // Note: security research treats anxiety (fear of distance, pursuit) and
+  // avoidance (self-protective withdrawal) as two distinct axes. A single low
+  // score can mean either, so the copy names both rather than assuming one.
   {
-    low: 'When connection feels threatened, your system activates strongly — anxiety or withdrawal shapes your response.',
+    low: 'When connection feels threatened, your system activates strongly — some people pursue and seek reassurance (an anxious pattern), others pull back to protect themselves (an avoidant one). Notice which is yours.',
     mid: 'You feel the pull when someone withdraws, but you can hold steady with some effort.',
     high: 'Your attachment wiring is relatively secure. When someone pulls away, you can stay grounded and give space.',
   },

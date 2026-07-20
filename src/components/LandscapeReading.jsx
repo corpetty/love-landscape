@@ -38,6 +38,24 @@ export default function LandscapeReading({ params, hideTitle = false }) {
         {summary}
       </p>
 
+      <p style={{
+        color: 'var(--color-text-muted)',
+        fontSize: '0.75rem',
+        lineHeight: 1.6,
+        opacity: 0.7,
+        marginBottom: '1rem',
+      }}>
+        A structured reflection, not a clinical or psychometric test. Each dimension draws
+        on established research (attachment, need-for-closure, playfulness, and more) but is
+        measured with only a question or two — treat it as a mirror for conversation, not a
+        verdict. <a
+          href={ARTICLE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+        >More on the science</a>.
+      </p>
+
       <button
         className="btn-secondary"
         onClick={() => setExpanded(!expanded)}
