@@ -9,11 +9,13 @@ import SettingsPanel from './components/SettingsPanel.jsx';
 import RefiningScreen from './components/RefiningScreen.jsx';
 import MyLandscapes from './components/MyLandscapes.jsx';
 import SharedView from './components/SharedView.jsx';
+import ArchetypesGallery from './components/ArchetypesGallery.jsx';
 import Footer from './components/Footer.jsx';
 import Header from './components/Header.jsx';
 import AccountScreen from './components/AccountScreen.jsx';
 import AuthPanel from './components/AuthPanel.jsx';
 import { computeParams } from './data/paramCompute.js';
+import { computeArchetype } from './data/archetypes.js';
 import { encodeParams, decodeParams } from './data/encoding.js';
 import { getEffectiveConfig, adjustParams } from './data/llmClient.js';
 import { record, getVariant } from './data/journey.js';
@@ -58,6 +60,18 @@ function consumeShareBootstrap() {
   return null;
 }
 
+// /a/<key> (served by api/archetype.js) injects window.__ARCHETYPE__ = key.
+function consumeArchetypeBootstrap() {
+  try {
+    const key = window.__ARCHETYPE__;
+    if (key) {
+      delete window.__ARCHETYPE__;
+      return key;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 const META_DESCRIPTIONS = {
   intro: 'A 19-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.',
   assessment: 'Answer 19 questions about how you experience intimacy, touch, trust, and connection.',
@@ -93,6 +107,7 @@ export default function App() {
   const [showAuth, setShowAuth] = useState(false);
   const [refineError, setRefineError] = useState(null);
   const [sharedData, setSharedData] = useState(null); // { slug, code, params } from /r/<slug>
+  const [archetypeFocus, setArchetypeFocus] = useState(null); // archetype key from /a/<key>
   // Set at assessment completion, consumed once when the final result renders:
   // the server-side create (spec AD-8) fires with the code the user actually sees.
   const pendingResultRef = useRef(null);
@@ -109,12 +124,22 @@ export default function App() {
       }
     }
 
+    // /a/<key> share pages inject the archetype key; open the gallery focused on it.
+    const archKey = consumeArchetypeBootstrap();
+    if (archKey) {
+      setArchetypeFocus(archKey);
+      setScreen('archetypes');
+      return;
+    }
+
     const url = new URL(window.location.href);
 
     // Deep link to a screen (e.g. /?screen=account after a credits checkout).
     const screenParam = url.searchParams.get('screen');
-    if (screenParam === 'account' || screenParam === 'landscapes') {
+    if (screenParam === 'account' || screenParam === 'landscapes' || screenParam === 'archetypes') {
       url.searchParams.delete('screen');
+      if (screenParam === 'archetypes') setArchetypeFocus(url.searchParams.get('a') || null);
+      url.searchParams.delete('a');
       window.history.replaceState({}, '', url.toString());
       setScreen(screenParam);
       return;
@@ -202,7 +227,8 @@ export default function App() {
   // fire-and-forget with a durable retry queue — rendering never waits on it.
   useEffect(() => {
     if (screen === 'results' && code) {
-      record('results_view');
+      const arch = params ? computeArchetype(params) : null;
+      record('results_view', arch ? { archetype: arch.archetype.key } : {});
       if (pendingResultRef.current) {
         recordResult({ code, variant: pendingResultRef.current.variant });
         pendingResultRef.current = null;
@@ -297,12 +323,14 @@ export default function App() {
 
   function goHome() { setShowAbout(false); setScreen('intro'); }
   function goLandscapes() { setShowAbout(false); setScreen('landscapes'); }
+  function goArchetypes() { setShowAbout(false); setArchetypeFocus(null); setScreen('archetypes'); }
   function goAccount() { setShowAbout(false); setScreen('account'); }
 
   const header = (
     <Header
       onHome={goHome}
       onMyLandscapes={goLandscapes}
+      onArchetypes={goArchetypes}
       onAccount={goAccount}
       onSignIn={() => setShowAuth(true)}
     />
@@ -355,6 +383,15 @@ export default function App() {
           params={sharedData?.params}
           code={sharedData?.code}
           onTakeAssessment={handleBegin}
+        />
+      );
+      break;
+    case 'archetypes':
+      content = (
+        <ArchetypesGallery
+          focusKey={archetypeFocus}
+          onTakeAssessment={handleBegin}
+          onBack={goHome}
         />
       );
       break;

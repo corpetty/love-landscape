@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import ArchetypeCard from './ArchetypeCard.jsx';
 import LandscapeReading from './LandscapeReading.jsx';
 import EnhancedReading from './EnhancedReading.jsx';
 import FullReadingCard from './FullReadingCard.jsx';
@@ -20,6 +21,8 @@ export default function ReadingsSection({
 
   return (
     <section style={{ marginTop: '2rem' }}>
+      <ArchetypeCard params={params} style={{ marginBottom: '1.5rem' }} />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.5rem' }}>
         <h3 style={{ fontSize: '1.1rem' }}>Your Reading</h3>
         <a

@@ -37,6 +37,16 @@ describe('archetype taxonomy', () => {
     expect(keys.size).toBe(10);
   });
 
+  it('has URL-safe, self-classifying keys (guards ?archetype= and /a/:key)', () => {
+    for (const a of ARCHETYPES) {
+      // keys land in URLs (/a/<key>) and og image params — keep them plain
+      expect(a.key, `key ${a.key}`).toMatch(/^[a-z]+$/);
+      // an archetype's own prototype must resolve back to itself, or the
+      // standalone ?archetype=<key> card and the nearest-match would disagree
+      expect(computeArchetype(a.prototype).archetype.key).toBe(a.key);
+    }
+  });
+
   it('maps every seed persona to its intended archetype', () => {
     for (const p of personas) {
       const result = computeArchetype(computeParams(p.answers));

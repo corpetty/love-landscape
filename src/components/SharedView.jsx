@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import VisualizationTabs from './VisualizationTabs.jsx';
+import ArchetypeCard from './ArchetypeCard.jsx';
 import LandscapeReading from './LandscapeReading.jsx';
 import CodeDisplay from './CodeDisplay.jsx';
+import { computeArchetype } from '../data/archetypes.js';
 import { record, setPendingSource } from '../data/journey.js';
 
 /**
@@ -11,8 +13,9 @@ import { record, setPendingSource } from '../data/journey.js';
  */
 export default function SharedView({ params, code, onTakeAssessment }) {
   useEffect(() => {
-    record('share_page_view');
-  }, []);
+    const arch = computeArchetype(params);
+    record('share_page_view', arch ? { archetype: arch.archetype.key } : {});
+  }, [params]);
 
   function handleCta() {
     record('share_page_cta');
@@ -37,6 +40,8 @@ export default function SharedView({ params, code, onTakeAssessment }) {
       </p>
 
       <VisualizationTabs params={params} partnerParams={null} view="yours" />
+
+      <ArchetypeCard params={params} style={{ marginTop: '1.5rem' }} />
 
       <div style={{ marginTop: '1.5rem' }}>
         <LandscapeReading params={params} />

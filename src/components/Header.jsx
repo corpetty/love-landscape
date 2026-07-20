@@ -6,7 +6,7 @@ import { useAuth, authAvailable } from '../data/auth.js';
  * entry point. Auth state is visible on every screen — signed out shows
  * "Sign in", signed in shows an initial avatar that opens the account page.
  */
-export default function Header({ onHome, onMyLandscapes, onAccount, onSignIn }) {
+export default function Header({ onHome, onMyLandscapes, onArchetypes, onAccount, onSignIn }) {
   const { user } = useAuth();
   const initial = user?.email?.[0]?.toUpperCase() || '?';
 
@@ -33,6 +33,14 @@ export default function Header({ onHome, onMyLandscapes, onAccount, onSignIn }) 
       </button>
 
       <nav style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        {onArchetypes && (
+          <button
+            onClick={onArchetypes}
+            style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}
+          >
+            Archetypes
+          </button>
+        )}
         <button
           onClick={onMyLandscapes}
           style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}
