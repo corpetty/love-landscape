@@ -102,4 +102,43 @@ export function generateRecommendations(paramsA, paramsB) {
   return results;
 }
 
+const COMPAT_LABELS = [
+  'deep friendships', 'romantic connection', 'the tender middle', 'physical warmth',
+  'emotional grounding', 'need for structure', 'comfort with ambiguity', 'openness',
+  'self-knowledge', 'self-intimacy', 'conflict approach', 'playfulness', 'attachment security',
+];
+
+/**
+ * A free, instant, algorithmic compatibility snapshot for two landscapes — the
+ * "hook" that frames the paid deep report. Returns an alignment score (how
+ * similarly the two are wired, not a quality verdict), the dimension they most
+ * share, and their steepest difference. Deterministic; no LLM.
+ */
+export function generateCompatibility(paramsA, paramsB) {
+  if (!Array.isArray(paramsA) || !Array.isArray(paramsB)) return null;
+  const n = Math.min(paramsA.length, paramsB.length, COMPAT_LABELS.length);
+  if (n === 0) return null;
+
+  let alignSum = 0;
+  let bestShared = { i: -1, score: -1 };
+  let biggestGap = { i: -1, diff: -1 };
+  for (let i = 0; i < n; i++) {
+    const a = paramsA[i];
+    const b = paramsB[i];
+    const diff = Math.abs(a - b);
+    const avg = (a + b) / 2;
+    alignSum += 1 - diff;
+    const sharedScore = (1 - diff) * avg; // aligned AND meaningfully present
+    if (sharedScore > bestShared.score) bestShared = { i, score: sharedScore };
+    if (diff > biggestGap.diff) biggestGap = { i, diff };
+  }
+
+  return {
+    score: Math.round((alignSum / n) * 100), // 0–100, "how similarly wired"
+    topShared: bestShared.i >= 0 ? COMPAT_LABELS[bestShared.i] : null,
+    topTension: biggestGap.i >= 0 ? COMPAT_LABELS[biggestGap.i] : null,
+    topTensionGap: biggestGap.diff,
+  };
+}
+
 export const DISCLAIMER = "Starting points, not diagnoses. Your landscape is a projection — reality has more dimensions than any model can hold.";

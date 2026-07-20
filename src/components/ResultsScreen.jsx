@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VisualizationTabs from './VisualizationTabs.jsx';
 import CodeDisplay from './CodeDisplay.jsx';
 import RecommendationCards from './RecommendationCards.jsx';
 import ResearchContribution from './ResearchContribution.jsx';
 import ReadingsSection from './ReadingsSection.jsx';
 import PairReading from './PairReading.jsx';
+import PairCompatibility from './PairCompatibility.jsx';
 import { decodeParams, encodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
+import { addRecentComparison, getRecentComparisons } from '../data/comparisons.js';
+import { computeArchetype } from '../data/archetypes.js';
+import { consumePendingPartner, record } from '../data/journey.js';
 import AuthPanel from './AuthPanel.jsx';
 import SharePageCard from './SharePageCard.jsx';
 import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
 import { getOwnedResultByCode } from '../data/resultsClient.js';
 
-export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount, onScience }) {
+export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount, onScience, initialPartnerCode }) {
   const wasRefined = baseParams && params !== baseParams &&
     baseParams.some((v, i) => Math.abs(v - params[i]) > 0.001);
   const [partnerCode, setPartnerCode] = useState('');
@@ -38,15 +42,34 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, ownedEntry?.client_result_id, ownedEntry?.claimed]);
 
-  function loadPartner() {
-    const p = decodeParams(partnerCode);
+  const compatRef = useRef(null);
+
+  function loadPartner(codeArg) {
+    const raw = typeof codeArg === 'string' ? codeArg : partnerCode;
+    const p = decodeParams(raw);
     if (!p) {
       setPartnerError('Invalid code. Codes start with L1_ or L2_ followed by encoded characters.');
       return;
     }
+    const canonical = encodeParams(p);
+    setPartnerCode(canonical);
     setPartnerParams(p);
     setPartnerError('');
+    addRecentComparison(canonical);
+    record('content_page_view', { page: 'compare', archetype: computeArchetype(p)?.archetype?.key });
+    // Surface the freshly-loaded compatibility content.
+    setTimeout(() => compatRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   }
+
+  // Auto-load a partner from the share round-trip (SharedView stashes the sharer's
+  // code) or a ?compare= deep link, so the comparison appears without a manual paste.
+  useEffect(() => {
+    const pc = initialPartnerCode || consumePendingPartner();
+    if (pc) loadPartner(pc);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const recentComparisons = getRecentComparisons().filter((c) => c.code !== code);
 
   function handleShareLink() {
     const url = new URL(window.location.href);
@@ -97,6 +120,17 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
         }}>
           AI refinement failed — showing base values. ({refineError})
         </p>
+      )}
+
+      {/* Compatibility headline — the archetype pairing + free snapshot (the hook) */}
+      <div ref={compatRef} style={{ scrollMarginTop: '1rem' }} />
+      {partnerParams && (
+        <PairCompatibility
+          params={params}
+          partnerParams={partnerParams}
+          code={code}
+          partnerCode={canonicalPartnerCode}
+        />
       )}
 
       {/* View toggle */}
@@ -220,12 +254,27 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
               fontSize: '0.95rem',
             }}
           />
-          <button className="btn-primary" onClick={loadPartner} style={{ padding: '0.6rem 1.25rem' }}>
+          <button className="btn-primary" onClick={() => loadPartner()} style={{ padding: '0.6rem 1.25rem' }}>
             Compare
           </button>
         </div>
         {partnerError && (
           <p role="alert" style={{ color: '#f97066', fontSize: '0.85rem', marginTop: '0.25rem' }}>{partnerError}</p>
+        )}
+        {recentComparisons.length > 0 && (
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.6rem', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>Recent:</span>
+            {recentComparisons.map((c) => (
+              <button
+                key={c.code}
+                onClick={() => loadPartner(c.code)}
+                className="btn-secondary"
+                style={{ fontSize: '0.78rem', padding: '0.25rem 0.6rem' }}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
