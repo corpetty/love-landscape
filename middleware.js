@@ -8,6 +8,8 @@
  * Regular browser requests pass through untouched.
  */
 
+import { computeArchetype } from './src/data/archetypes.js';
+
 const CRAWLER_UA_PATTERNS = [
   'facebookexternalhit',
   'Facebot',
@@ -60,9 +62,15 @@ export default function middleware(request) {
     return; // pass through to normal Vite app
   }
 
-  // Decode the code to extract landscape highlights for the description
-  const description = getDescription(code);
-  const title = 'My Relational Landscape — Love Landscape';
+  // Lead with the archetype when the code decodes; fall back to the
+  // top-dimensions description otherwise.
+  const arch = getArchetype(code);
+  const title = arch
+    ? `${arch.name} — Love Landscape`
+    : 'My Relational Landscape — Love Landscape';
+  const description = arch
+    ? `Someone's terrain is ${arch.name} — ${arch.essence} What's yours?`
+    : getDescription(code);
   const ogImageUrl = `${BASE_URL}/api/og?code=${encodeURIComponent(code)}`;
   const pageUrl = `${BASE_URL}/?code=${encodeURIComponent(code)}`;
 
@@ -131,6 +139,31 @@ const PARAM_LABELS = [
   'Openness', 'Mapped Terrain', 'Self-Intimacy', 'Conflict Approach',
   'Playfulness', 'Attachment Security',
 ];
+
+/** Decode a code to its 13 params, or null if malformed. */
+function decodeCodeParams(code) {
+  const isV2 = code.startsWith('L2_');
+  const payload = isV2 || code.startsWith('L1_') ? code.slice(3) : null;
+  if (!payload) return null;
+  let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4 !== 0) b64 += '=';
+  let binary;
+  try { binary = atob(b64); } catch { return null; }
+  if (binary.length !== (isV2 ? 13 : 9)) return null;
+  const params = [];
+  for (let i = 0; i < binary.length; i++) params.push(binary.charCodeAt(i) / 255);
+  while (params.length < 13) params.push(0.5); // pad L1 → L2
+  return params;
+}
+
+/** Nearest archetype for a code, or null. */
+function getArchetype(code) {
+  try {
+    const params = decodeCodeParams(code);
+    if (!params) return null;
+    return computeArchetype(params)?.archetype || null;
+  } catch { return null; }
+}
 
 function getDescription(code) {
   try {

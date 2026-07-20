@@ -18,6 +18,7 @@ import fs from 'fs';
 import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { decodeParams } from '../src/data/encoding.js';
+import { computeArchetype } from '../src/data/archetypes.js';
 
 const SLUG_RE = /^[1-9A-HJ-NP-Za-km-z]{10}$/; // base58, 10 chars
 
@@ -37,23 +38,29 @@ export function loadShell() {
   return null;
 }
 
-function esc(s) {
+export function esc(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 /** Replace the content attribute of an existing meta tag; inject if absent. */
-function setMeta(html, attr, key, value) {
+export function setMeta(html, attr, key, value) {
   const re = new RegExp(`(<meta\\s+${attr}="${key}"\\s+content=")[^"]*(")`);
   if (re.test(html)) return html.replace(re, `$1${esc(value)}$2`);
   return html.replace('</head>', `  <meta ${attr}="${key}" content="${esc(value)}" />\n</head>`);
 }
 
 export function buildSharePage(shell, { slug, code, origin }) {
-  const title = 'A relational landscape — Love Landscape';
-  const description =
-    'Someone shared the shape of their relational world. Explore it — then map your own.';
+  // Lead with the archetype when the code decodes — it's the shareable hook.
+  const decoded = decodeParams(code);
+  const arch = decoded ? computeArchetype(decoded)?.archetype : null;
+  const title = arch
+    ? `${arch.name} — Love Landscape`
+    : 'A relational landscape — Love Landscape';
+  const description = arch
+    ? `Someone's terrain is ${arch.name} — ${arch.essence} What's yours?`
+    : 'Someone shared the shape of their relational world. Explore it — then map your own.';
   const pageUrl = `${origin}/r/${slug}`;
   const imageUrl = `${origin}/api/og?code=${encodeURIComponent(code)}`;
 

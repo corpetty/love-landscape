@@ -30,7 +30,17 @@ describe('buildSharePage', () => {
     expect(html).toContain(`content="${ORIGIN}/r/${SLUG}"`);
     expect(html).toContain(`content="${ORIGIN}/api/og?code=${encodeURIComponent(CODE)}"`);
     expect(html).not.toContain('The Shape of Intimacy</title>'); // title swapped
-    expect(html).toContain('<title>A relational landscape — Love Landscape</title>');
+  });
+
+  it('leads the title and description with the decoded archetype', () => {
+    // A valid code resolves to an archetype ("The <Name>") — the shareable hook.
+    expect(html).toMatch(/<title>The [\w ]+ — Love Landscape<\/title>/);
+    expect(html).toMatch(/terrain is The [\w ]+/);
+  });
+
+  it('falls back to the generic title when the code does not decode', () => {
+    const bad = buildSharePage(SHELL, { slug: SLUG, code: 'L2_notavalidcode', origin: ORIGIN });
+    expect(bad).toContain('<title>A relational landscape — Love Landscape</title>');
   });
 
   it('updates the canonical link to the share URL', () => {

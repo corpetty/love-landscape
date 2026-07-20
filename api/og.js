@@ -1,15 +1,18 @@
 import { ImageResponse } from '@vercel/og';
+import { computeArchetype, ARCHETYPES } from '../src/data/archetypes.js';
 
 export const config = { runtime: 'edge' };
 
 /**
  * Dynamic Open Graph image generator.
- * GET /api/og              → default branded image
- * GET /api/og?code=L2_...  → personalized landscape preview
+ * GET /api/og                   → default branded image
+ * GET /api/og?code=L2_...       → your terrain: archetype + your signature bars
+ * GET /api/og?archetype=<key>   → a named archetype card (for /a/<key> share links)
  */
 export default function handler(req) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
+  const archetypeKey = searchParams.get('archetype');
 
   const PARAM_LABELS = [
     'Deep Friendships', 'Romantic Love', 'Tender Middle', 'Casual Touch',
@@ -39,14 +42,27 @@ export default function handler(req) {
     } catch { /* ignore decode errors, fall back to default */ }
   }
 
-  // Pick top 5 dimensions to highlight
-  let highlights = [];
-  if (params && params.length >= 9) {
-    const indexed = params.map((v, i) => ({ label: PARAM_LABELS[i] || `P${i}`, value: v }));
-    highlights = indexed.sort((a, b) => b.value - a.value).slice(0, 5);
+  // Resolve the archetype + the values to draw its signature bars from:
+  //  - ?archetype=<key> → the named archetype, bars from its prototype
+  //  - ?code=…          → nearest archetype to the user's terrain, bars from their params
+  let arch = null;
+  let barSource = null;
+  if (archetypeKey) {
+    arch = ARCHETYPES.find((a) => a.key === archetypeKey) || null;
+    barSource = arch ? arch.prototype : null;
+  } else if (params && params.length >= 13) {
+    const r = computeArchetype(params);
+    arch = r ? r.archetype : null;
+    barSource = params;
   }
 
-  const isPersonalized = highlights.length > 0;
+  // The archetype's signature params become the bars (3-4 per archetype).
+  let highlights = [];
+  if (arch && barSource) {
+    highlights = arch.signature.map((i) => ({ label: PARAM_LABELS[i] || `P${i}`, value: barSource[i] }));
+  }
+
+  const isPersonalized = !!arch;
 
   return new ImageResponse(
     {
@@ -82,15 +98,30 @@ export default function handler(req) {
             type: 'div',
             props: {
               style: {
-                fontSize: isPersonalized ? '42px' : '52px',
+                fontSize: isPersonalized ? '54px' : '52px',
                 fontWeight: 'bold',
                 textAlign: 'center',
-                marginBottom: '24px',
-                lineHeight: 1.2,
+                marginBottom: isPersonalized ? '10px' : '24px',
+                lineHeight: 1.15,
               },
-              children: isPersonalized ? 'My Relational Landscape' : 'The Shape of Intimacy',
+              children: isPersonalized ? arch.name : 'The Shape of Intimacy',
             },
           },
+          ...(isPersonalized
+            ? [{
+                type: 'div',
+                props: {
+                  style: {
+                    fontSize: '26px',
+                    color: '#b8b4d8',
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    marginBottom: '22px',
+                  },
+                  children: arch.essence,
+                },
+              }]
+            : []),
           isPersonalized
             ? {
                 type: 'div',
