@@ -120,20 +120,75 @@ function SectionCard({ section, defaultOpen, refCallback }) {
 }
 
 /**
- * Renders text with **bold** support. No other markdown.
+ * Split a section body into blocks: paragraphs and bullet lists.
+ * Consecutive `- `/`* ` lines become one list; blank lines separate paragraphs;
+ * other consecutive lines join into a paragraph (soft wraps).
+ * Exported for testing.
+ */
+export function parseBlocks(text) {
+  const blocks = [];
+  let para = [];
+  let list = [];
+  const flushPara = () => { if (para.length) { blocks.push({ type: 'p', text: para.join(' ') }); para = []; } };
+  const flushList = () => { if (list.length) { blocks.push({ type: 'ul', items: list.slice() }); list = []; } };
+
+  for (const raw of (text || '').split('\n')) {
+    const line = raw.trim();
+    const bullet = line.match(/^[-*]\s+(.*)/); // "- " or "* " (space required, so *italic* is safe)
+    if (bullet) { flushPara(); list.push(bullet[1]); }
+    else if (line === '') { flushPara(); flushList(); }
+    else { flushList(); para.push(line); }
+  }
+  flushPara(); flushList();
+  return blocks;
+}
+
+/**
+ * Tokenize inline markdown: **bold** (may contain *italic*) and *italic*.
+ * Non-greedy so multiple spans and inner markers pair correctly.
+ * Returns a nested token tree. Exported for testing.
+ */
+export function tokenizeInline(text) {
+  const tokens = [];
+  const re = /\*\*([\s\S]+?)\*\*|\*([^*\n]+?)\*/g;
+  let last = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) tokens.push({ type: 'text', text: text.slice(last, m.index) });
+    if (m[1] !== undefined) tokens.push({ type: 'bold', children: tokenizeInline(m[1]) });
+    else tokens.push({ type: 'italic', text: m[2] });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) tokens.push({ type: 'text', text: text.slice(last) });
+  return tokens;
+}
+
+function renderTokens(tokens, keyPrefix) {
+  return tokens.map((t, i) => {
+    const key = `${keyPrefix}-${i}`;
+    if (t.type === 'bold') {
+      return <strong key={key} style={{ color: 'var(--color-text)', fontWeight: 600 }}>{renderTokens(t.children, key)}</strong>;
+    }
+    if (t.type === 'italic') return <em key={key}>{t.text}</em>;
+    return <span key={key}>{t.text}</span>;
+  });
+}
+
+/**
+ * Renders reading text with paragraphs, bullet lists, **bold**, and *italic*.
  */
 function RichText({ text }) {
   if (!text) return null;
-
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  const blocks = parseBlocks(text);
   return (
     <>
-      {parts.map((part, i) => {
-        if (part.startsWith('**') && part.endsWith('**')) {
-          return <strong key={i} style={{ color: 'var(--color-text)', fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
-        }
-        return <span key={i}>{part}</span>;
-      })}
+      {blocks.map((b, i) => b.type === 'ul' ? (
+        <ul key={i} style={{ margin: '0.3rem 0 0.6rem', paddingLeft: '1.15rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+          {b.items.map((it, j) => <li key={j}>{renderTokens(tokenizeInline(it), `${i}-${j}`)}</li>)}
+        </ul>
+      ) : (
+        <p key={i} style={{ margin: i === 0 ? '0 0 0.6rem' : '0.6rem 0' }}>{renderTokens(tokenizeInline(b.text), `p${i}`)}</p>
+      ))}
     </>
   );
 }
