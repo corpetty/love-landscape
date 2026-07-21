@@ -23,6 +23,20 @@ import { decodeParams } from '../src/data/encoding.js';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 const STATUSES = new Set(['single', 'partnered', 'complicated', 'prefer-not']);
+const UTM_FIELDS = ['source', 'medium', 'campaign', 'content', 'term'];
+const UTM_VALUE_RE = /^[a-zA-Z0-9_.\-]{1,64}$/;
+
+// Defense-in-depth: the client already sanitizes, but never trust a body.
+// Returns a clean {source,medium,...} object, or null if nothing valid.
+function cleanUtm(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const out = {};
+  for (const f of UTM_FIELDS) {
+    const v = raw[f];
+    if (typeof v === 'string' && UTM_VALUE_RE.test(v)) out[f] = v;
+  }
+  return Object.keys(out).length ? out : null;
+}
 const SLUG_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'; // base58
 const SESSION_DAILY_LIMIT = 30;
 const IP_DAILY_LIMIT = 2000; // CGNAT-safe
@@ -105,6 +119,7 @@ async function insertMilestone(supabase, { kind, personKey, clientResultId = nul
 
 async function opCreate(req, res, supabase, body, isDev) {
   const { client_result_id, session_id, code, owner_token, status, variant, completed_at } = body;
+  const utm = cleanUtm(body.utm);
 
   if (!client_result_id || !UUID_RE.test(client_result_id)) return res.status(400).json({ error: 'Invalid client_result_id' });
   if (!session_id || !UUID_RE.test(session_id)) return res.status(400).json({ error: 'Invalid session_id' });
@@ -146,7 +161,7 @@ async function opCreate(req, res, supabase, body, isDev) {
       kind: 'create',
       personKey: session_id,
       clientResultId: client_result_id,
-      meta: { status: status ?? null, variant: row.variant },
+      meta: { status: status ?? null, variant: row.variant, ...(utm ? { utm } : {}) },
       isDev,
       happenedAt,
     });

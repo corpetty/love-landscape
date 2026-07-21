@@ -11,7 +11,7 @@
  *   result_id, code, owner_token, status, variant, completed_at, created_at, label }]
  */
 
-import { getSessionId, isDev } from './journey.js';
+import { getSessionId, isDev, getUtm } from './journey.js';
 
 const STORE_KEY = 'll-results-v1';
 const QUEUE_KEY = 'll-create-queue-v1';
@@ -120,6 +120,7 @@ async function postCreate(entry) {
       status: entry.status ?? null,
       variant: entry.variant ?? null,
       completed_at: entry.completed_at,
+      utm: getUtm() || undefined, // first-touch, persisted; safe to read at flush time
       is_dev: isDev() || undefined,
     }),
   });

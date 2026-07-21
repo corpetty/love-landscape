@@ -12,6 +12,14 @@
 const SESSION_KEY = 'll-session-v1';
 const DEV_KEY = 'll-dev';
 const VARIANT_OVERRIDE_KEY = 'll-variant-override';
+const UTM_KEY = 'll-utm-v1';
+
+// Campaign attribution fields we persist. First-touch: the first campaign link a
+// device lands on is credited, and rides along until the assessment completes
+// (which may be minutes and several page views later). Sanitized here AND on the
+// server (api/results.js) before it reaches a milestone.
+const UTM_FIELDS = ['source', 'medium', 'campaign', 'content', 'term'];
+const UTM_VALUE_RE = /^[a-zA-Z0-9_.\-]{1,64}$/;
 
 const FLUSH_MAX_EVENTS = 10;
 const FLUSH_INTERVAL_MS = 5000;
@@ -36,6 +44,30 @@ export function getSessionId() {
 
 export function isDev() {
   try { return localStorage.getItem(DEV_KEY) === '1'; } catch { return false; }
+}
+
+/**
+ * First-touch campaign attribution, or null. Shape: { source, medium, campaign,
+ * content, term } (only present fields). Stamped onto client events and the
+ * create milestone so the funnel can be split by channel/post.
+ */
+export function getUtm() {
+  try {
+    const raw = localStorage.getItem(UTM_KEY);
+    if (!raw) return null;
+    const utm = JSON.parse(raw);
+    return utm && typeof utm === 'object' && Object.keys(utm).length ? utm : null;
+  } catch { return null; }
+}
+
+// Read utm_* from the URL, keep only clean values; returns null if none present.
+function parseUtm(url) {
+  const utm = {};
+  for (const f of UTM_FIELDS) {
+    const v = url.searchParams.get(`utm_${f}`);
+    if (v && UTM_VALUE_RE.test(v)) utm[f] = v;
+  }
+  return Object.keys(utm).length ? utm : null;
 }
 
 // FNV-1a over the session UUID; even hash = variant 0 (control).
@@ -81,6 +113,17 @@ export function initJourney() {
       dirty = true;
     }
 
+    // Campaign attribution: persist the first clean utm_* set we ever see on
+    // this device (first-touch), then strip all utm_* from the URL either way
+    // so they never leak into shared/copied links or later navigations.
+    const utm = parseUtm(url);
+    if (utm && !localStorage.getItem(UTM_KEY)) {
+      localStorage.setItem(UTM_KEY, JSON.stringify(utm));
+    }
+    for (const f of UTM_FIELDS) {
+      if (url.searchParams.has(`utm_${f}`)) { url.searchParams.delete(`utm_${f}`); dirty = true; }
+    }
+
     if (dirty) window.history.replaceState({}, '', url.toString());
   } catch { /* never block app start */ }
 
@@ -111,6 +154,8 @@ export function record(name, props = {}) {
     pendingSource = null;
   }
   entry.props.variant = getVariant();
+  const utm = getUtm();
+  if (utm) entry.props.utm = utm;
   buffer.push(entry);
 
   if (buffer.length >= FLUSH_MAX_EVENTS) {

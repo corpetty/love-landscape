@@ -10,6 +10,18 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recha
 const TOKEN_KEY = 'll-admin-token';
 const ACCENT = '#7F77DD';
 
+// Campaign decision thresholds (docs/social-campaign-plan.md §1). A rate is
+// "passing" when it clears the bar; shown green/amber purely as a reading aid.
+const GATES = { completion: 0.60, share: 0.20, viral: 0.15, pair: 0.08, purchase: 0.015 };
+
+function ratio(num, den) { return den > 0 ? num / den : null; }
+function pct(r, gate) {
+  if (r == null) return { text: '—', color: 'var(--color-text-muted)' };
+  const text = `${(r * 100).toFixed(r < 0.1 ? 1 : 0)}%`;
+  const color = gate == null ? 'var(--color-text)' : r >= gate ? '#3ec17a' : '#f0a836';
+  return { text, color };
+}
+
 const MILESTONE_ORDER = ['create', 'publish', 'compare', 'signup', 'purchase'];
 const MILESTONE_LABELS = {
   create: 'Completions',
@@ -98,6 +110,8 @@ export default function FunnelPanel() {
   const totals = data?.totals || {};
   const daily = (data?.daily_creates || []).map((d) => ({ day: d.day.slice(5), count: d.count }));
   const rejections = data?.rate_limit_rejections || [];
+  const bySource = data?.by_source || [];
+  const shareLoop = data?.share_loop || {};
 
   return (
     <div>
@@ -153,6 +167,54 @@ export default function FunnelPanel() {
             ) : (
               <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>No completions in window.</p>
             )}
+          </div>
+
+          {/* Campaign decision metrics — per source (docs/social-campaign-plan.md §1) */}
+          <h3 style={{ fontSize: '1.05rem', marginBottom: '0.35rem' }}>Campaign funnel by source</h3>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
+            First-touch <code>utm_source</code>. Green ≥ gate, amber below. Starts are best-effort (events);
+            completions/published/purchases are server-truth (milestones). Global viral pull:{' '}
+            <strong style={pct(ratio(shareLoop.starts_from_share, shareLoop.share_page_views), GATES.viral)}>
+              {pct(ratio(shareLoop.starts_from_share, shareLoop.share_page_views), GATES.viral).text}
+            </strong>{' '}
+            ({(shareLoop.starts_from_share ?? 0).toLocaleString()} starts / {(shareLoop.share_page_views ?? 0).toLocaleString()} share views).
+          </p>
+          <div className="card" style={{ padding: '1rem', marginBottom: '2rem', overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: '0.82rem', borderCollapse: 'collapse', minWidth: '640px' }}>
+              <thead>
+                <tr style={{ color: 'var(--color-text-muted)', textAlign: 'right' }}>
+                  <th style={{ padding: '0.3rem 0.5rem', textAlign: 'left' }}>source</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>starts</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>completions</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>completion %</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>share %</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>pair %</th>
+                  <th style={{ padding: '0.3rem 0.5rem' }}>purchase %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bySource.map((s) => {
+                  const comp = pct(ratio(s.completions, s.starts), GATES.completion);
+                  const share = pct(ratio(s.published, s.completions), GATES.share);
+                  const pair = pct(ratio(s.compares, s.completions), GATES.pair);
+                  const buy = pct(ratio(s.purchases, s.completions), GATES.purchase);
+                  return (
+                    <tr key={s.source} style={{ borderTop: '1px solid var(--color-border)', textAlign: 'right' }}>
+                      <td style={{ padding: '0.3rem 0.5rem', textAlign: 'left', fontFamily: 'var(--font-mono)' }}>{s.source}</td>
+                      <td style={{ padding: '0.3rem 0.5rem' }}>{s.starts.toLocaleString()}</td>
+                      <td style={{ padding: '0.3rem 0.5rem' }}>{s.completions.toLocaleString()}</td>
+                      <td style={{ padding: '0.3rem 0.5rem', color: comp.color, fontWeight: 600 }}>{comp.text}</td>
+                      <td style={{ padding: '0.3rem 0.5rem', color: share.color, fontWeight: 600 }}>{share.text}</td>
+                      <td style={{ padding: '0.3rem 0.5rem', color: pair.color, fontWeight: 600 }}>{pair.text}</td>
+                      <td style={{ padding: '0.3rem 0.5rem', color: buy.color, fontWeight: 600 }}>{buy.text}</td>
+                    </tr>
+                  );
+                })}
+                {bySource.length === 0 && (
+                  <tr><td colSpan={7} style={{ padding: '0.5rem', color: 'var(--color-text-muted)' }}>No attributed traffic in window.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* Diagnostic events */}
