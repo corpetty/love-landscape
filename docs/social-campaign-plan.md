@@ -83,3 +83,23 @@ Time budget assumption: this is a ~5–8 hr/week operation once the week-0 batch
 - **Platform link-suppression:** TikTok/IG throttle link-out content. Mitigation: the *card* is the content; the link lives in bio; measure via utm, expect lossy attribution and lean on `from=share` for the organic loop.
 - **Metric contamination:** friends-and-family traffic in week 1. Tag it (`utm_source=ff`) or exclude the first 48h from the readout.
 - **The quiz spreads but nobody pays:** that's not a failure of the campaign — it's the branch-B answer the PRD kill-test is designed to surface. The campaign succeeds by producing a clean answer either way. Note that with the waitlist probe scrapped, purchase is the only intent signal, and it's a high bar ($12); a spread-but-no-purchase result may warrant a cheaper intent probe before fully writing off intent.
+
+## Appendix A — UTM tagging scheme
+
+Attribution is live (shipped 2026-07-21): the app captures first-touch `utm_*` on landing, persists it set-once, strips the params from the URL (so they don't leak into copied/shared links), and stamps `utm_source` onto the server-truth `create` milestone. The admin funnel dashboard (FunnelPanel) splits the five §1 metrics by `utm_source`. Tag every outbound link so the dashboard buckets match what you hand out.
+
+**`utm_source` is the split key** (the dashboard groups on the raw string) — keep it a fixed vocabulary. `utm_content` is your per-post granularity for spotting which specific creative drove traffic. Values are sanitized server-side to `[a-zA-Z0-9_.-]`, max 64 chars: no spaces, emojis, or capitals-vs-lowercase drift (`tiktok` ≠ `TikTok` → two rows).
+
+| Channel | `utm_source` | `utm_medium` | `utm_content` (example) |
+|---|---|---|---|
+| TikTok / Reels / Shorts | `tiktok`, `reels`, `shorts` | `video` | `terrain_morph_01` |
+| Instagram carousels | `instagram` | `carousel` | `archetype_mesa` |
+| X/Twitter | `x` | `thread` / `post` | `volcano_mesa_pairing` |
+| Reddit | `reddit` | `post` | `r_polyamory` (subreddit) |
+| Hacker News | `hn` | `post` | `show_hn` |
+| Product Hunt | `producthunt` | `launch` | `ph_launch` |
+| Friends & family (exclude from readout) | `ff` | `dm` | — |
+
+Example link: `https://<domain>/?utm_source=tiktok&utm_medium=video&utm_content=terrain_morph_01`
+
+Fields captured: `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term` (only those present are stored). Use `utm_campaign` to group a burst across channels (e.g. `utm_campaign=ph_week5`). The global viral-pull stat (share_page_view → assessment_start tagged `from=share`) is tracked separately from UTM via the existing share round-trip, so organic loop spread is measured even where platforms strip link params.
