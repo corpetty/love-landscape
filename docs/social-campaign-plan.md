@@ -23,18 +23,42 @@ Interpretation mirrors the PRD kill-test: **spread without intent** (1–4 pass,
 
 Volume target: **2,000 completions** over the 6 weeks. Below ~500 total, the conversion metrics are noise — treat that as a distribution failure, not a concept failure.
 
-## 2. Pre-launch build list (blocking, ~1 week)
+## 2. Pre-launch build list
 
-1. **Verify prod deploys main.** Known gap: prod was not tracking main as of July 2026. Nothing else matters until the campaign traffic hits the current build. Smoke-test share links + OG images + Stripe on the *production* domain.
-2. **UTM capture.** Persist `utm_source/medium/campaign/content` from first landing into the journey session and stamp it on `assessment_start` (same pattern as the existing `from` tag in `src/data/journey.js`). Without this, every channel test below is unattributable. Small build (~half day).
-3. **Wire the metrics dashboard** (AdminDashboard.jsx stub → the 5 metrics above, split by utm_source). Even a SQL notebook is fine; it just has to exist before traffic arrives so week-1 numbers aren't reconstructed.
-4. **Nice-to-have, not blocking:** downloadable/9:16 version of the archetype card (the OG image is 1200×630; vertical video/stories need portrait). Can ship in week 2.
+**Shipped 2026-07-21:**
+1. ✅ **Prod deploys main** — verified tracking `main`.
+2. ✅ **UTM capture** — first-touch `utm_source/medium/campaign/content/term` persisted set-once, stripped from the URL, stamped onto client events and the server-truth `create` milestone (`src/data/journey.js`, `api/results.js`). See Appendix A.
+3. ✅ **Metrics dashboard** — per-source funnel + the 5 §1 metrics in FunnelPanel, backed by `admin_metrics` (migration 008).
+
+**Remaining (blocking — see §3.5 on why these are not optional):**
+4. **"Who made this / why" page.** A named human, honest intent, one paragraph. Defuses the anonymous-scam prior without putting the founder's face/personality in the growth loop. Small build.
+5. **Anti-scam landing copy.** Surface the trust tells the product already earns: *no signup, no email required, results shown immediately, here's the method.* Copy-only change to `IntroScreen.jsx` + the share card. Half day.
+
+**Nice-to-have, not blocking:**
+6. Downloadable/9:16 version of the archetype card (the OG image is 1200×630; vertical video/stories need portrait). Can ship in week 2.
 
 ## 3. Why faceless works here
 
 The product already produces the influencer: **the archetype card is the content unit.** Every completed assessment mints a shareable artifact (OG card with archetype name, epithet, essence, signature bars) and a link that renders it on every social platform. The campaign's job is to seed archetype content into channels where personality-quiz and relationship-discourse culture already lives; the loop (`share → view → take → share`) does the rest or it doesn't — which is exactly the test.
 
 Brand voice replaces founder voice: the account persona is **"the cartographer"** — speaks in the archetype/terrain register, never first-person-founder. All assets are product-generated visuals (3D terrain screen recordings, archetype cards, pairing graphics) plus text.
+
+## 3.5 Credibility: defusing the scam prior (design constraint)
+
+*Added 2026-07-21 from external feedback.* A relationship quiz that spreads virally on social **pattern-matches to the Facebook IQ/personality-quiz clickfarm genre.** This means faceless doesn't start at zero trust — it starts at a **negative prior.** The share loop that drives growth is the same mechanic every engagement-farm uses, so the first reaction from a cold viewer is "is this a scammy data-harvest?" This is a first-class constraint, not a footnote: the shareable artifact and landing must *carry* the credibility, not defer it to whoever clicks through to the methodology.
+
+The product already earns the exact trust signals scam quizzes fake — we just have to lead with them:
+
+- **No email / no signup to see results.** The single biggest anti-scam tell: clickfarm quizzes gate the payoff behind your personal data; we don't. Say it out loud on the landing page and in bios.
+- **No "share to unlock."** Results are instant, no dark pattern. Say it.
+- **The 3D terrain is itself the signal.** A genuinely novel visualization reads as "a real person built this," not a template farm cranking 500 variants of a cheesy badge.
+- **Methodology in reach, not three clicks deep.** The honesty copy already exists; surface it and link it from the share card.
+
+**Faceless ≠ anonymous.** The *content/virality layer* stays faceless (no personal brand, no founder image required). The *entity* must not be anonymous — total anonymity is what reads as "hiding something." A short, factual "who made this and why" page (named human, honest intent) is the cheapest, highest-leverage fix and is fully compatible with keeping the founder out of the growth loop.
+
+**Channel implication:** the scam prior is strongest on cold paid social — exactly where this genre proliferates (Facebook). That arena is deliberately **out** of the channel plan (§4). Reddit / HN / typology communities are far more forgiving of the format *if* posts lead with substance, and they self-select for the skeptical-but-curious who can tell us apart from a clickfarm.
+
+**This is testable, not just a worry.** If the scam prior is real, it shows up in the by-source dashboard as low completion / high bounce on cold social vs. the substance-led channels. The data adjudicates.
 
 ## 4. Channels & content pillars
 
@@ -79,7 +103,7 @@ Time budget assumption: this is a ~5–8 hr/week operation once the week-0 batch
 
 ## 7. Risks
 
-- **Cold-start credibility:** faceless accounts start at zero trust. Mitigation: Reddit/HN posts lead with the artifact (3D viz, methodology), which carries its own credibility; typology communities don't care who you are.
+- **Scam prior (not just cold-start):** the format pattern-matches to Facebook clickfarm quizzes, so faceless starts at a *negative* prior, not zero. This is elevated to a design constraint in §3.5 — mitigations (no-email trust copy, "who made this" page, substance-led channel posts) are pre-launch tasks, not afterthoughts.
 - **Platform link-suppression:** TikTok/IG throttle link-out content. Mitigation: the *card* is the content; the link lives in bio; measure via utm, expect lossy attribution and lean on `from=share` for the organic loop.
 - **Metric contamination:** friends-and-family traffic in week 1. Tag it (`utm_source=ff`) or exclude the first 48h from the readout.
 - **The quiz spreads but nobody pays:** that's not a failure of the campaign — it's the branch-B answer the PRD kill-test is designed to surface. The campaign succeeds by producing a clean answer either way. Note that with the waitlist probe scrapped, purchase is the only intent signal, and it's a high bar ($12); a spread-but-no-purchase result may warrant a cheaper intent probe before fully writing off intent.
