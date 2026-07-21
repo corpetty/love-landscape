@@ -1,0 +1,85 @@
+# Social Campaign Plan — Concept Validation (Faceless)
+
+**Status:** Draft v1, 2026-07-21
+**Companion docs:** [dating-app-pivot-PRD.md](./dating-app-pivot-PRD.md) (gates), [phase-0-spec.md](./phase-0-spec.md) (instrumentation), [step-0-runbook.md](./step-0-runbook.md)
+
+## 1. Objective
+
+Test whether the core concept — *map your relational shape onto a terrain, get an archetype, compare with a partner* — spreads and converts **without founder identity attached**. Generate enough attributed funnel data in 6 weeks to justify (or kill) further investment, ahead of the full Phase 0 gate (25K completions / 16 weeks).
+
+This is a **campaign-scale probe**, not the Phase 0 gate itself. Success here = evidence to run Phase 0 seriously.
+
+### What "has legs" means (decision metrics)
+
+| # | Metric | Signal threshold | Where measured |
+|---|--------|-----------------|----------------|
+| 1 | Completion rate (assessment_start → complete) | ≥ 60% | journey events |
+| 2 | Share/publish rate (complete → publish or copy-link) | ≥ 20% | milestones `publish` + `share_page_cta` |
+| 3 | Viral pull (share_page_view → assessment_start tagged `from=share`) | ≥ 15% | journey `from` attribution |
+| 4 | Pair round-trip (starts with `?compare=` partner code) | ≥ 8% of completions | `partner_code_load` / `compare` milestone |
+| 5 | Any purchase intent ($12 Full Reading or Compatibility) | ≥ 1.5% of completions | `purchase` milestone |
+
+Interpretation mirrors the PRD kill-test: **spread without intent** (1–4 pass, 5 fails) → the quiz is entertainment, keep it cheap; **intent without spread** → concept resonates but distribution is wrong, iterate channels not product; **both** → green-light Phase 0 build-out. (The F0.8 dating-intent waitlist probe is scrapped — purchase is the sole intent signal for this campaign.)
+
+Volume target: **2,000 completions** over the 6 weeks. Below ~500 total, the conversion metrics are noise — treat that as a distribution failure, not a concept failure.
+
+## 2. Pre-launch build list (blocking, ~1 week)
+
+1. **Verify prod deploys main.** Known gap: prod was not tracking main as of July 2026. Nothing else matters until the campaign traffic hits the current build. Smoke-test share links + OG images + Stripe on the *production* domain.
+2. **UTM capture.** Persist `utm_source/medium/campaign/content` from first landing into the journey session and stamp it on `assessment_start` (same pattern as the existing `from` tag in `src/data/journey.js`). Without this, every channel test below is unattributable. Small build (~half day).
+3. **Wire the metrics dashboard** (AdminDashboard.jsx stub → the 5 metrics above, split by utm_source). Even a SQL notebook is fine; it just has to exist before traffic arrives so week-1 numbers aren't reconstructed.
+4. **Nice-to-have, not blocking:** downloadable/9:16 version of the archetype card (the OG image is 1200×630; vertical video/stories need portrait). Can ship in week 2.
+
+## 3. Why faceless works here
+
+The product already produces the influencer: **the archetype card is the content unit.** Every completed assessment mints a shareable artifact (OG card with archetype name, epithet, essence, signature bars) and a link that renders it on every social platform. The campaign's job is to seed archetype content into channels where personality-quiz and relationship-discourse culture already lives; the loop (`share → view → take → share`) does the rest or it doesn't — which is exactly the test.
+
+Brand voice replaces founder voice: the account persona is **"the cartographer"** — speaks in the archetype/terrain register, never first-person-founder. All assets are product-generated visuals (3D terrain screen recordings, archetype cards, pairing graphics) plus text.
+
+## 4. Channels & content pillars
+
+### Content pillars (all channels remix these)
+
+- **P1 — Archetype identity:** "The Mesa: high ground, chosen guests." One archetype per post, gallery link `/a/<key>`. Identity-claim content is the engine of quiz virality — people share what describes them.
+- **P2 — Pairing drama:** "A Volcano dating a Mesa: what the saddle between them looks like." Uses the pair-compatibility layer; drives the `?compare=` round-trip. Highest comment-bait potential ("tag your Mesa").
+- **P3 — The terrain visual:** screen recordings of the 3D landscape morphing as answers change. The scroll-stopper; no other quiz renders results as terrain. Pure product footage, zero face.
+- **P4 — Methodology/credibility:** the 13 dimensions, what the research does and doesn't support (honesty copy already exists). This is the HN/Reddit-longform pillar, not the TikTok pillar.
+
+### Channel plan
+
+| Channel | Format | Pillar | Cadence | Notes |
+|---|---|---|---|---|
+| **TikTok + Reels + Shorts** (one account, cross-post) | 20–40s faceless video: terrain morphs, archetype card reveals, text-to-speech or captions | P3, P1, P2 | 4–5/wk | The main bet. Quiz/archetype content ("which one are you") is a proven faceless format. Each video's utm in bio link (single link, rotate `utm_content`). |
+| **Instagram carousels** | 10-slide archetype gallery carousels; pairing matchups | P1, P2 | 2–3/wk | Carousels are saved/shared; archetype cards are pre-made art. |
+| **X/Twitter** | Threads: one per archetype; pairing hot-takes; quote-RT bait ("QT with your terrain") | P1, P2, P4 | daily-ish, cheap | OG cards render natively — every shared result link is a free ad. |
+| **Reddit** | Genuine-participation posts, not ads: r/nonmonogamy, r/polyamory, r/attachment_theory-adjacent subs, r/InternetIsBeautiful (the 3D angle), r/SampleSize (explicitly for surveys) | P3, P4 | 1–2/wk, per-sub rules | Highest-intent audience for the openness dimensions. Self-promo rules are real: lead with the visualization or the research framing, disclose being the builder. |
+| **Hacker News** | One "Show HN: I mapped relationship openness onto 3D terrain" | P4 + P3 | once, week 2–3 | Tech-audience spike + feedback; time it after week-1 bugs are shaken out. |
+| **Product Hunt** | Standard launch | all | once, week 4–5 | After iteration from earlier channels; PH audience skews single + curious. |
+| **Quiz-culture platforms** (uquiz/Tumblr-adjacent, personality-typology communities e.g. PDB forums) | Archetype content seeded where MBTI/enneagram people live | P1 | opportunistic | These communities *seek out* new typologies; highest organic-spread odds per hour spent. |
+
+**Explicitly out:** LinkedIn, founder-voice posting, podcast circuit — all require the personal brand this plan avoids. **Paid:** hold $0 for weeks 1–3. If one channel shows organic pull, optionally put $200–500 behind the single best-performing video in weeks 4–6 to test paid amplification of a proven creative — never to rescue a dead one.
+
+## 5. Six-week run plan
+
+- **Week 0 (prep):** build list §2; produce first content batch (10 archetype cards formatted per-platform, 5 terrain screen recordings, all 10 X threads drafted). Register handles.
+- **Weeks 1–2 (seed):** start TikTok/Reels/Shorts + X cadence. 2 Reddit posts in the most on-topic subs. Watch completion rate and share rate daily — if completion < 50%, pause and fix the assessment funnel before spending more content.
+- **Week 2–3:** Show HN. Fold feedback into copy.
+- **Weeks 3–4 (double down):** kill the two worst-performing formats, double the best. Ship 9:16 share card if P3/P1 video is working. Seed typology communities.
+- **Week 4–5:** Product Hunt launch.
+- **Week 6 (readout):** freeze, compile the 6 metrics by utm_source, write `docs/campaign-readout.md`, make the call against §1.
+
+Time budget assumption: this is a ~5–8 hr/week operation once the week-0 batch exists, because content is product-generated, not filmed.
+
+## 6. Measurement & review ritual
+
+- All external links carry `utm_source` (channel) + `utm_content` (post ID). Bio-link rotation on TikTok/IG since inline links aren't allowed.
+- Weekly 30-min readout against the §1 table, per channel (~10 min once the dashboard exists). Kill/double decisions happen weekly, not at the end.
+- Guardrails from the PRD apply: watch for velocity anomalies (one viral spike ≠ repeatable channel; require ≥2 distinct posts driving traffic before calling a channel "working").
+- Research-submission opt-in data stays firewalled from marketing use, as already designed.
+
+## 7. Risks
+
+- **Cold-start credibility:** faceless accounts start at zero trust. Mitigation: Reddit/HN posts lead with the artifact (3D viz, methodology), which carries its own credibility; typology communities don't care who you are.
+- **Platform link-suppression:** TikTok/IG throttle link-out content. Mitigation: the *card* is the content; the link lives in bio; measure via utm, expect lossy attribution and lean on `from=share` for the organic loop.
+- **Metric contamination:** friends-and-family traffic in week 1. Tag it (`utm_source=ff`) or exclude the first 48h from the readout.
+- **The quiz spreads but nobody pays:** that's not a failure of the campaign — it's the branch-B answer the PRD kill-test is designed to surface. The campaign succeeds by producing a clean answer either way. Note that with the waitlist probe scrapped, purchase is the only intent signal, and it's a high bar ($12); a spread-but-no-purchase result may warrant a cheaper intent probe before fully writing off intent.
