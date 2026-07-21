@@ -55,6 +55,25 @@ export default function IntroScreen({ onBegin, onLoadCode, onAbout, hasSavedResu
         <Feature icon="∅" label="no account needed" />
       </div>
 
+      {/* Trust tells, surfaced on the landing to counter the "is this a scammy
+          quiz?" prior (docs/social-campaign-plan.md §3.5). All true today. */}
+      <p style={{
+        marginTop: '1.75rem',
+        maxWidth: '440px',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        color: 'var(--color-text-muted)',
+        fontSize: '0.82rem',
+        lineHeight: 1.6,
+      }}>
+        No signup, no email. Your answers never leave your device, and your result
+        appears the moment you finish — nothing to unlock, nothing sold. <a
+          href="https://bayesianpersuasion.com/posts/the-shape-of-intimacy"
+          target="_blank" rel="noopener noreferrer"
+          style={{ color: 'var(--color-accent)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+        >Read the thinking behind it.</a>
+      </p>
+
       <button
         onClick={onAbout}
         style={{

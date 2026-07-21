@@ -115,6 +115,27 @@ export default function AboutSection({ onBack }) {
         </section>
 
         <section>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Who made this (and why)</h2>
+          <div style={{ color: 'var(--color-text-muted)' }}>
+            <p style={{ marginBottom: '0.75rem' }}>
+              I'm Corey — I built Love Landscape. It grew out of an essay I wrote,{' '}
+              <a
+                href="https://bayesianpersuasion.com/posts/the-shape-of-intimacy"
+                target="_blank" rel="noopener noreferrer"
+                style={{ color: 'var(--color-accent)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+              >The Shape of Intimacy</a>, because I wanted the picture it describes to actually
+              exist — something you could take, look at, and talk through with someone.
+            </p>
+            <p>
+              To be plain about what this isn't: it's not an engagement farm or a data-harvesting
+              funnel. There's no signup wall, no email required to see your result, and nothing is
+              sold to third parties (see Privacy below). I'd rather it be honest and a little rough
+              than slick and manipulative — and I'm improving it in the open as people use it.
+            </p>
+          </div>
+        </section>
+
+        <section>
           <h2 style={{ fontSize: '1.2rem', marginBottom: '0.5rem' }}>Privacy</h2>
           <p style={{ color: 'var(--color-text-muted)' }}>
             Your questionnaire answers never leave your device — the terrain is computed and
