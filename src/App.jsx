@@ -5,6 +5,7 @@ import LoadCodeScreen from './components/LoadCodeScreen.jsx';
 import ResultsScreen from './components/ResultsScreen.jsx';
 import AboutSection from './components/AboutSection.jsx';
 import ScienceMethods from './components/ScienceMethods.jsx';
+import TerrainEngine from './components/TerrainEngine.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import RefiningScreen from './components/RefiningScreen.jsx';
@@ -106,6 +107,7 @@ export default function App() {
   const [contextAnswers, setContextAnswers] = useState({});
   const [showAbout, setShowAbout] = useState(false);
   const [showMethods, setShowMethods] = useState(false);
+  const [showEngine, setShowEngine] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [refineError, setRefineError] = useState(null);
@@ -330,19 +332,21 @@ export default function App() {
 
   const hasSavedResult = Boolean(code && params && screen === 'intro');
 
-  function goHome() { setShowAbout(false); setShowMethods(false); setScreen('intro'); }
-  function goLandscapes() { setShowAbout(false); setShowMethods(false); setScreen('landscapes'); }
-  function goArchetypes() { setShowAbout(false); setShowMethods(false); setArchetypeFocus(null); setScreen('archetypes'); }
+  function goHome() { setShowAbout(false); setShowMethods(false); setShowEngine(false); setScreen('intro'); }
+  function goLandscapes() { setShowAbout(false); setShowMethods(false); setShowEngine(false); setScreen('landscapes'); }
+  function goArchetypes() { setShowAbout(false); setShowMethods(false); setShowEngine(false); setArchetypeFocus(null); setScreen('archetypes'); }
   function goScience(focusIndex) {
     setShowAbout(false);
     setShowMethods(false);
+    setShowEngine(false);
     setScienceReturn(screen === 'sharedView' ? 'sharedView' : 'results');
     setScienceFocus(typeof focusIndex === 'number' ? focusIndex : null);
     setScreen('science');
   }
-  function goAccount() { setShowAbout(false); setShowMethods(false); setScreen('account'); }
-  function goAbout() { setShowMethods(false); setShowAbout(true); }
-  function goMethods() { setShowAbout(false); setShowMethods(true); }
+  function goAccount() { setShowAbout(false); setShowMethods(false); setShowEngine(false); setScreen('account'); }
+  function goAbout() { setShowMethods(false); setShowEngine(false); setShowAbout(true); }
+  function goMethods() { setShowAbout(false); setShowEngine(false); setShowMethods(true); }
+  function goEngine() { setShowAbout(false); setShowMethods(false); setShowEngine(true); }
 
   const header = (
     <Header
@@ -373,8 +377,19 @@ export default function App() {
     return (
       <>
         {header}
-        <ScienceMethods onBack={() => setShowMethods(false)} />
+        <ScienceMethods onBack={() => setShowMethods(false)} onEngine={goEngine} />
         <Footer onAbout={goAbout} onMethods={() => setShowMethods(false)} />
+        {authModal}
+      </>
+    );
+  }
+
+  if (showEngine) {
+    return (
+      <>
+        {header}
+        <TerrainEngine onBack={goMethods} />
+        <Footer onAbout={goAbout} onMethods={goMethods} />
         {authModal}
       </>
     );

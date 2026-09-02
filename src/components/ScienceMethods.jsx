@@ -11,7 +11,7 @@ import { record } from '../data/journey.js';
  * "Science (and its limits)" summary in AboutSection — no assessment result
  * required to read this.
  */
-export default function ScienceMethods({ onBack }) {
+export default function ScienceMethods({ onBack, onEngine }) {
   useEffect(() => {
     record('content_page_view', { page: 'methods' });
   }, []);
@@ -74,6 +74,13 @@ export default function ScienceMethods({ onBack }) {
             is — from "grounded in a validated instrument" down to "our own contribution." The
             labels are the honest version, not the flattering one.
           </p>
+          {onEngine && (
+            <p style={{ marginBottom: '1.1rem' }}>
+              <button onClick={onEngine} style={linkStyle}>
+                Or skip the prose — explore the live weight matrix and try your own answers →
+              </button>
+            </p>
+          )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '1.5rem' }}>
             {Object.entries(SCIENCE_TIERS).map(([key, t]) => (
