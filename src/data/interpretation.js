@@ -1,4 +1,4 @@
-const PARAM_LABELS = [
+export const PARAM_LABELS = [
   {
     name: 'Deep friendships',
     short: 'Friendship depth',

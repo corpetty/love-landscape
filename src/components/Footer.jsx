@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Footer({ onAbout }) {
+export default function Footer({ onAbout, onMethods }) {
   return (
     <footer style={{
       textAlign: 'center',
@@ -27,6 +27,22 @@ export default function Footer({ onAbout }) {
         >
           How it works
         </button>
+        {onMethods && (
+          <>
+            <span style={{ opacity: 0.3 }}>|</span>
+            <button
+              onClick={onMethods}
+              style={{
+                fontSize: '0.8rem',
+                color: 'var(--color-text-muted)',
+                textDecoration: 'underline',
+                textUnderlineOffset: '2px',
+              }}
+            >
+              The science
+            </button>
+          </>
+        )}
         <span style={{ opacity: 0.3 }}>|</span>
         <span>Your answers never leave your device. Anonymous usage counts only.</span>
         <span style={{ opacity: 0.3 }}>|</span>

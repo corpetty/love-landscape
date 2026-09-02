@@ -4,6 +4,7 @@ import AssessmentScreen from './components/AssessmentScreen.jsx';
 import LoadCodeScreen from './components/LoadCodeScreen.jsx';
 import ResultsScreen from './components/ResultsScreen.jsx';
 import AboutSection from './components/AboutSection.jsx';
+import ScienceMethods from './components/ScienceMethods.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import RefiningScreen from './components/RefiningScreen.jsx';
@@ -104,6 +105,7 @@ export default function App() {
   const [code, setCode] = useState('');
   const [contextAnswers, setContextAnswers] = useState({});
   const [showAbout, setShowAbout] = useState(false);
+  const [showMethods, setShowMethods] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [refineError, setRefineError] = useState(null);
@@ -328,16 +330,19 @@ export default function App() {
 
   const hasSavedResult = Boolean(code && params && screen === 'intro');
 
-  function goHome() { setShowAbout(false); setScreen('intro'); }
-  function goLandscapes() { setShowAbout(false); setScreen('landscapes'); }
-  function goArchetypes() { setShowAbout(false); setArchetypeFocus(null); setScreen('archetypes'); }
+  function goHome() { setShowAbout(false); setShowMethods(false); setScreen('intro'); }
+  function goLandscapes() { setShowAbout(false); setShowMethods(false); setScreen('landscapes'); }
+  function goArchetypes() { setShowAbout(false); setShowMethods(false); setArchetypeFocus(null); setScreen('archetypes'); }
   function goScience(focusIndex) {
     setShowAbout(false);
+    setShowMethods(false);
     setScienceReturn(screen === 'sharedView' ? 'sharedView' : 'results');
     setScienceFocus(typeof focusIndex === 'number' ? focusIndex : null);
     setScreen('science');
   }
-  function goAccount() { setShowAbout(false); setScreen('account'); }
+  function goAccount() { setShowAbout(false); setShowMethods(false); setScreen('account'); }
+  function goAbout() { setShowMethods(false); setShowAbout(true); }
+  function goMethods() { setShowAbout(false); setShowMethods(true); }
 
   const header = (
     <Header
@@ -357,8 +362,19 @@ export default function App() {
     return (
       <>
         {header}
-        <AboutSection onBack={() => setShowAbout(false)} />
-        <Footer onAbout={() => setShowAbout(false)} />
+        <AboutSection onBack={() => setShowAbout(false)} onMethods={goMethods} />
+        <Footer onAbout={() => setShowAbout(false)} onMethods={goMethods} />
+        {authModal}
+      </>
+    );
+  }
+
+  if (showMethods) {
+    return (
+      <>
+        {header}
+        <ScienceMethods onBack={() => setShowMethods(false)} />
+        <Footer onAbout={goAbout} onMethods={() => setShowMethods(false)} />
         {authModal}
       </>
     );
@@ -406,6 +422,7 @@ export default function App() {
           params={params || sharedData?.params}
           focusIndex={scienceFocus}
           onBack={() => setScreen(scienceReturn)}
+          onMethods={goMethods}
         />
       );
       break;
@@ -451,7 +468,7 @@ export default function App() {
     <>
       {header}
       {content}
-      <Footer onAbout={() => setShowAbout(true)} />
+      <Footer onAbout={goAbout} onMethods={goMethods} />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
       {authModal}
     </>

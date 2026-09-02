@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function AboutSection({ onBack }) {
+export default function AboutSection({ onBack, onMethods }) {
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', paddingTop: '2rem' }}>
       <button className="btn-secondary" onClick={onBack} style={{ marginBottom: '1.5rem' }}>
@@ -111,6 +111,19 @@ export default function AboutSection({ onBack }) {
               contributes an anonymous terrain that lets us check how the dimensions hold up
               and refine the archetypes over time.
             </p>
+            {onMethods && (
+              <button
+                onClick={onMethods}
+                style={{
+                  fontSize: '0.9rem',
+                  color: 'var(--color-accent)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '2px',
+                }}
+              >
+                Read the full methods and sources →
+              </button>
+            )}
           </div>
         </section>
 

@@ -9,7 +9,7 @@ import { record } from '../data/journey.js';
  * they'd gain from exploring it, and a link to the source. Honesty tiers make
  * clear how strong each grounding actually is.
  */
-export default function ScienceReading({ params, focusIndex, onBack }) {
+export default function ScienceReading({ params, focusIndex, onBack, onMethods }) {
   const reading = generateReading(params);
   const focusRef = useRef(null);
 
@@ -37,6 +37,22 @@ export default function ScienceReading({ params, focusIndex, onBack }) {
         <em> your</em> scores read in those frameworks — and where the research is solid,
         related, or genuinely our own. This is a reflection tool, not a clinical instrument;
         the links go to the real work if you want to dig in.
+        {onMethods && (
+          <>
+            {' '}
+            <button
+              onClick={onMethods}
+              style={{
+                fontSize: '0.85rem',
+                color: 'var(--color-accent)',
+                textDecoration: 'underline',
+                textUnderlineOffset: '2px',
+              }}
+            >
+              Read the full methodology →
+            </button>
+          </>
+        )}
       </p>
 
       {/* Honesty legend */}
