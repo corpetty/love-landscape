@@ -71,7 +71,8 @@ New module: `src/terrain/pathfinder.js`. Pure functions, no React, fully unit-te
   start: { nearestFeature, quadrant, height, mappedness },
   end:   { nearestFeature, quadrant, height, mappedness },
   storyType: 'short-walk' | 'the-wall' | 'long-road' | 'expedition',
-  flags: ['end-in-fog', 'end-on-ridge', 'end-on-owner-valley', ...]
+  flags: ['end-in-fog', 'end-on-ridge', 'end-on-owner-valley', ...],
+  exclusivity: null | { wished, ownerOpenness, ownerStructureNeed, gap }   // only when the wish was set
 }
 ```
 
@@ -99,6 +100,8 @@ Guided-then-adjust beats drag-only: a bare map asks for a spatial judgment most 
 
 **Desire picker** — the same component on the *other* person's terrain, with the prompt "Where do you want to be on their landscape?" and an optional one-line note ("what would that look like for you?").
 
+**Exclusivity (optional, decision §12.1).** Under the pin, a collapsed "Add more" row offers one slider: "How exclusive do you want this bond to be?" (open → exclusive). It is skippable and has no default. When set, the narrative compares it with the owner's openness (P7) and structure need (P5) as a fourth "route fact": a wish for exclusivity against a high-openness terrain, or a wish for openness against a canyon-like one, is named as its own ridge. When not set, the narrative says nothing about it.
+
 **Reveal** — sealed envelope. Neither party sees the other's pin until both have placed. This prevents anchoring, and it makes the reveal a moment. Locally the app hides the partner's pin until the viewer has set their own.
 
 ## 6. Exchange: codes and the ask link
@@ -106,19 +109,22 @@ Guided-then-adjust beats drag-only: a bare map asks for a spatial judgment most 
 **Codes (stateless, matches AD-5).** A new code family `V2_` for a *view* of a terrain:
 
 ```
-V2_ + base64( kind(1) + terrainParams(13) + x(1) + y(1) )
+V2_ + base64( kind(1) + terrainParams(13) + x(1) + y(1) + exclusivity(1) )
 kind: 0 = placement by owner, 1 = desire by partner, 2 = owner's wish
+exclusivity: 0–254 = wished exclusivity (0 = open, 254 = exclusive); 255 = not set
 ```
 
-The code embeds the terrain it is about, so it decodes alone. Labels are not in the code. `src/data/encoding.js` gains `encodeView` / `decodeView`; `decodeParams` keeps rejecting `V2_` so nothing existing changes.
+The exclusivity byte is optional (decision, §12.1). It is always present in the code so the length is fixed. The code embeds the terrain it is about, so it decodes alone. Labels are not in the code. `src/data/encoding.js` gains `encodeView` / `decodeView`; `decodeParams` keeps rejecting `V2_` so nothing existing changes.
 
 **The ask link (server, the "query someone else" flow).** A creates an ask from the results screen. The app returns `/ask/<slug>`. B opens it and sees A's terrain read-only (the share page pattern from `SharedView.jsx`), the desire picker, and the CTA to take the assessment. B submits. When A has also placed B, both can view the difference. Every ask is a share, so this feeds the growth loop the Phase 0 spec measures.
+
+B answers as a **guest** (decision, §12.3). No assessment and no account are required to mark a point. The assessment CTA comes after the submit, with the sharer's code stashed via `setPendingPartner` so B's own results auto-compare, the same round-trip `SharedView.jsx` uses. A guest answer attaches to the ask by slug and a bearer token minted for that answer, so B can edit or withdraw it before reveal. If B later takes the assessment, the answer links to B's result. Measure both paths: `ask_answer` with `{ guest: true|false }`, and `assessment_start` with `from: 'ask'`.
 
 Constraints already in the repo:
 - The deploy is capped at 12 serverless functions (see commit "Consolidate to 12 serverless functions"). No new function. Ask ops go into `api/results.js` as new `op` values; the `/ask/<slug>` rewrite goes through `api/share.js` next to `/r/<slug>`, with `middleware.js` and `vercel.json` updated.
 - Migration `009_love_difference.sql`, additive:
   - `asks(id, slug, owner_result_id → results, partner_result_id nullable, status, created_at, is_dev)`
-  - `placements(id, ask_id → asks, author_role owner|partner, kind current|desired|wish, x, y, note, created_at)`
+  - `placements(id, ask_id → asks, author_role owner|partner, kind current|desired|wish, x, y, exclusivity nullable, note, created_at)`
   - Add `ask_create`, `ask_open`, `ask_answer`, `placement_set`, `path_view` to the `events` name CHECK.
 - Ownership proof is the existing model: JWT for claimed results, bearer `owner_token` for anonymous ones (`api/reading.js` `authorize()` shows the pattern).
 
@@ -184,11 +190,11 @@ Phase A first. It proves the engine and the narrative with zero infrastructure. 
 - **Sealed reveal** is not optional. It is the difference between a reflection tool and a weapon.
 - No numeric "love difference score" in v1. Bands and words. The alignment percentage on the comparison card already carries the number-shaped hook.
 
-## 12. Open questions
+## 12. Open questions and decisions
 
-1. **Axes cover kind and depth, not structure.** A pin cannot say "I want to be your only" or "I want no label." Openness (P7) and structure need (P5) are only visible as ridge heights on the route. Is a third elicited value (exclusivity wish) needed, or does L3 cover it?
+1. **Decided — exclusivity is optional, not required.** The axes cover kind and depth, not structure. A pin cannot say "I want to be your only." So the desire picker offers one optional exclusivity slider (§5), stored as a nullable byte in the code and a nullable column in `placements` (§6). Unset means the narrative stays silent on it. L3 still covers the full 13 dimensions later.
 2. **Tuning λ.** Over-vs-around must feel right on real terrains. Decide the persona test cases before writing the constant.
-3. **Where the ask lives when B has no landscape.** B can answer the desire picker without taking the assessment. Do we require the assessment first (funnel) or allow a guest answer (conversion)? Recommendation: guest answer, then the CTA. Measure both.
+3. **Decided — guest answers are allowed.** B can mark a point with no assessment and no account. The assessment CTA follows the submit, and the answer links to B's result if B takes it later (§6). Both paths are measured.
 4. **Regret path.** Should a person be able to un-send an ask after B has answered but before A has placed? Recommendation: yes, until reveal.
 5. **Naming — decided in direction.** The feature is a *growth journey*. Two words carry two jobs, so keep both:
    - **The gap** (a noun for the measurement): "the love difference" stays as the internal and methods-page term.
