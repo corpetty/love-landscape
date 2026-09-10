@@ -1,6 +1,8 @@
-# The Love Difference — plan
+# The Growth Journey (working title) — plan
 
 *Status: proposal, September 2026. Nothing in this document is built yet. It lists the concept, the data model, the phases, the files to touch, and the open questions.*
+
+*Naming: the operator chose the "growth journey" direction (Sept 2026). "The Love Difference" below names the measured gap; "Growth Journey" names the feature and the narrative. See §12.5 for the shortlist.*
 
 ## 1. The idea in one paragraph
 
@@ -188,4 +190,12 @@ Phase A first. It proves the engine and the narrative with zero infrastructure. 
 2. **Tuning λ.** Over-vs-around must feel right on real terrains. Decide the persona test cases before writing the constant.
 3. **Where the ask lives when B has no landscape.** B can answer the desire picker without taking the assessment. Do we require the assessment first (funnel) or allow a guest answer (conversion)? Recommendation: guest answer, then the CTA. Measure both.
 4. **Regret path.** Should a person be able to un-send an ask after B has answered but before A has placed? Recommendation: yes, until reveal.
-5. **Naming.** "The Love Difference" is the working name. Alternatives that use the terrain vocabulary: "The Route", "Where You Stand", "The Crossing".
+5. **Naming — decided in direction.** The feature is a *growth journey*. Two words carry two jobs, so keep both:
+   - **The gap** (a noun for the measurement): "the love difference" stays as the internal and methods-page term.
+   - **The feature and narrative** (what people see and share): pick one from the growth-journey family. Shortlist, in terrain vocabulary:
+     - **Growth Journey** — plain, clear, the operator's direction. Safe default.
+     - **The Journey Between** — names both people and the route.
+     - **Growth Route** — shorter; "route" matches the path engine's output.
+     - **The Crossing** — keeps the ridge imagery; works as a verb ("make the crossing").
+   - UI labels that follow from the default: section header "Your growth journey", ask link CTA "Ask them to mark where they want to be", reveal screen "The journey between you", paid tier "The Journey Reading".
+   - Decide the final word before Phase B, because the ask link copy and the `/ask/` page title carry it.
