@@ -375,3 +375,13 @@ export function symmetryLine(pathA, pathB) {
     ? 'One of you is asking for a considerably bigger move than the other. That asymmetry is worth naming plainly — it is easy to mistake for indifference on one side, or for pressure on the other.'
     : 'One of you is asking for a considerably bigger move than the other. Naming it directly usually goes better than letting it show up as pace.';
 }
+
+/**
+ * The reading as markdown, for ReadingRenderer — the same component the AI
+ * readings use, so a growth journey looks like the rest of the product rather
+ * than like a second design.
+ */
+export function narrativeToMarkdown(narrative) {
+  if (!narrative?.sections?.length) return '';
+  return narrative.sections.map((s) => `## ${s.title}\n\n${s.text}`).join('\n\n');
+}

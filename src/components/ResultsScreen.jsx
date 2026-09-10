@@ -6,9 +6,10 @@ import ResearchContribution from './ResearchContribution.jsx';
 import ReadingsSection from './ReadingsSection.jsx';
 import CompatibilityReportCard from './CompatibilityReportCard.jsx';
 import PairCompatibility from './PairCompatibility.jsx';
+import GrowthJourneyCard from './GrowthJourneyCard.jsx';
 import { decodeParams, encodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
-import { addRecentComparison, getRecentComparisons, comparisonDisplayName } from '../data/comparisons.js';
+import { addRecentComparison, getRecentComparisons, comparisonDisplayName, getComparisonName } from '../data/comparisons.js';
 import { computeArchetype } from '../data/archetypes.js';
 import { consumePendingPartner, record } from '../data/journey.js';
 import AuthPanel from './AuthPanel.jsx';
@@ -22,6 +23,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
   const [partnerCode, setPartnerCode] = useState('');
   const [partnerParams, setPartnerParams] = useState(null);
   const [partnerError, setPartnerError] = useState('');
+  const [partnerName, setPartnerName] = useState(null);
   const [view, setView] = useState('yours');
   const [confirmReset, setConfirmReset] = useState(false);
   // AI reading text — lifted so ResearchContribution can offer to include it
@@ -55,6 +57,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
     setPartnerCode(canonical);
     setPartnerParams(p);
     setPartnerError('');
+    setPartnerName(getComparisonName(canonical));
     addRecentComparison(canonical);
     record('content_page_view', { page: 'compare', archetype: computeArchetype(p)?.archetype?.key });
     // Surface the freshly-loaded compatibility content.
@@ -130,6 +133,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           partnerParams={partnerParams}
           code={code}
           partnerCode={canonicalPartnerCode}
+          onNameChange={setPartnerName}
         />
       )}
 
@@ -280,6 +284,21 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
 
       {/* Recommendations */}
       <RecommendationCards recommendations={recommendations} />
+
+      {/* Growth Journey — where one particular bond stands on each landscape,
+          where it wants to be, and the route between. Needs a loaded partner:
+          a journey is between two landscapes, and the partner's code is the
+          only identity a pin can be filed under, so without it a placement
+          could not be told apart from one made about somebody else. */}
+      {partnerParams && (
+        <GrowthJourneyCard
+          params={params}
+          code={code}
+          partnerParams={partnerParams}
+          partnerCode={canonicalPartnerCode}
+          partnerName={partnerName}
+        />
+      )}
 
       {/* Paid Compatibility Report — the deep pair reading (dormant until infra).
           Only for device-owned results; the free hook above stands on its own. */}

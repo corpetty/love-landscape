@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { describePoint, heightAt, mappednessAt, quadrantWords, featureContributions } from '../src/terrain/placement.js';
+import { describePoint, heightAt, mappednessAt, quadrantWords, featureContributions, constrainToMap } from '../src/terrain/placement.js';
 import { generateField } from '../src/terrain/fieldGenerator.js';
-import { GRID_SIZE } from '../src/terrain/constants.js';
+import { GRID_SIZE, FEATURE_LABELS } from '../src/terrain/constants.js';
 import { computeParams } from '../src/data/paramCompute.js';
 import { personas } from '../analysis/personas.js';
 
@@ -110,5 +110,32 @@ describe('describePoint', () => {
     expect(describePoint(0.5, 0.15, walled).onHighGround).toBe(true);
     const unmapped = [...NEUTRAL]; unmapped[8] = 0;
     expect(describePoint(0.95, 0.95, unmapped).inFog).toBe(true);
+  });
+});
+
+describe('constrainToMap', () => {
+  it('leaves a point inside the drawn circle alone', () => {
+    expect(constrainToMap(0.5, 0.5)).toEqual({ x: 0.5, y: 0.5 });
+    expect(constrainToMap(0.18, 0.82)).toEqual({ x: 0.18, y: 0.82 });
+  });
+
+  it('keeps every named map feature reachable', () => {
+    // A pin the picker cannot place on a feature makes that feature
+    // undescribable, so the radius must not exclude any of them.
+    for (const f of FEATURE_LABELS) {
+      expect(constrainToMap(f.x, f.y), f.name).toEqual({ x: f.x, y: f.y });
+    }
+  });
+
+  it('projects an outside point onto the rim rather than into a corner', () => {
+    const c = constrainToMap(0.02, 0.02);
+    expect(Math.hypot(c.x - 0.5, c.y - 0.5)).toBeCloseTo(0.47, 6);
+    // Projection preserves the direction the person was aiming.
+    expect(c.x).toBeCloseTo(c.y, 6);
+    expect(c.x).toBeLessThan(0.5);
+  });
+
+  it('handles the exact centre without dividing by zero', () => {
+    expect(constrainToMap(0.5, 0.5, 0)).toEqual({ x: 0.5, y: 0.5 });
   });
 });

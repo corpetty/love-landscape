@@ -140,3 +140,20 @@ export function describePoint(x, y, params) {
     label: contribs[0] ? contribs[0].name : words.phrase,
   };
 }
+
+/**
+ * Keep a point inside the circle the map is actually drawn in.
+ *
+ * The terrain is computed over the unit square but rendered through a circular
+ * mask, so a pin at a corner would be invisible and would describe ground the
+ * person never saw. Points outside are projected back onto the rim rather than
+ * clamped per-axis, which would slide them along the edge into a corner.
+ */
+export function constrainToMap(x, y, radius = 0.47) {
+  const dx = x - 0.5;
+  const dy = y - 0.5;
+  const d = Math.hypot(dx, dy);
+  if (d <= radius) return { x: Math.min(1, Math.max(0, x)), y: Math.min(1, Math.max(0, y)) };
+  const scale = radius / (d || 1e-9);
+  return { x: 0.5 + dx * scale, y: 0.5 + dy * scale };
+}

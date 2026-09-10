@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { generateField, generateCombinedField } from '../terrain/fieldGenerator.js';
 import { COLOR_RAMP, FEATURE_LABELS, AXIS_LABELS, GRID_SIZE } from '../terrain/constants.js';
+import { constrainToMap } from '../terrain/placement.js';
 
 const CONTOUR_LEVELS = [-0.6, -0.3, 0.0, 0.3, 0.6];
 
@@ -22,9 +23,29 @@ function interpolateColor(val) {
   return ramp[0];
 }
 
-export default function ContourView({ params, partnerParams, view = 'yours' }) {
+/**
+ * @param {object} props
+ * @param {number[]} props.params            the landscape to draw
+ * @param {number[]|null} [props.partnerParams]
+ * @param {'yours'|'theirs'|'combined'} [props.view]
+ * @param {Array<[number,number]>|null} [props.route]  a growth-journey route
+ * @param {Array<{x,y,label,tone,key}>} [props.markers] pins on the map
+ * @param {((x:number, y:number) => void)|null} [props.onPick] makes the map a picker
+ * @param {boolean} [props.showFeatureLabels]
+ */
+export default function ContourView({
+  params,
+  partnerParams,
+  view = 'yours',
+  route = null,
+  markers = [],
+  onPick = null,
+  showFeatureLabels = true,
+}) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
+  const pickLayerRef = useRef(null);
+  const dragging = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -153,6 +174,28 @@ export default function ContourView({ params, partnerParams, view = 'yours' }) {
       ctx.stroke();
     }
 
+    // Draw the growth-journey route, inside the clip so it can't escape the map.
+    if (route && route.length > 1) {
+      const toPx = ([x, y]) => [x * size, y * size];
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      // A soft halo first, so the line stays readable over any terrain colour.
+      for (const [width, stroke] of [[7 * dpr, 'rgba(0,0,0,0.28)'], [3 * dpr, '#ffffff']]) {
+        ctx.beginPath();
+        const [x0, y0] = toPx(route[0]);
+        ctx.moveTo(x0, y0);
+        for (let i = 1; i < route.length; i++) {
+          const [px, py] = toPx(route[i]);
+          ctx.lineTo(px, py);
+        }
+        ctx.lineWidth = width;
+        ctx.strokeStyle = stroke;
+        ctx.setLineDash(stroke === '#ffffff' ? [6 * dpr, 5 * dpr] : []);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
     ctx.restore();
 
     // Draw circle border
@@ -162,13 +205,57 @@ export default function ContourView({ params, partnerParams, view = 'yours' }) {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-  }, [params, partnerParams, view]);
+  }, [params, partnerParams, view, route]);
+
+  // Pointer → normalized map coordinates, constrained to the drawn circle so a
+  // pin can never land in a corner the map doesn't render.
+  function pickFrom(event) {
+    const box = pickLayerRef.current?.getBoundingClientRect();
+    if (!box || !box.width) return;
+    const raw = constrainToMap(
+      (event.clientX - box.left) / box.width,
+      (event.clientY - box.top) / box.height,
+    );
+    onPick(raw.x, raw.y);
+  }
+
+  const pickHandlers = onPick ? {
+    onPointerDown: (e) => {
+      dragging.current = true;
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+      pickFrom(e);
+    },
+    onPointerMove: (e) => { if (dragging.current) pickFrom(e); },
+    onPointerUp: (e) => {
+      dragging.current = false;
+      e.currentTarget.releasePointerCapture?.(e.pointerId);
+    },
+    onPointerCancel: () => { dragging.current = false; },
+  } : {};
 
   return (
     <div
       ref={containerRef}
       style={{ width: '100%', position: 'relative', borderRadius: '8px', overflow: 'hidden' }}
     >
+      {/* Interaction layer: matches the canvas box exactly, sits above the
+          labels, and only exists when the map is being used as a picker. */}
+      {onPick && (
+        <div
+          ref={pickLayerRef}
+          {...pickHandlers}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            margin: '0 auto',
+            maxWidth: '500px',
+            aspectRatio: '1',
+            cursor: 'crosshair',
+            touchAction: 'none',
+            zIndex: 3,
+          }}
+        />
+      )}
       <canvas
         ref={canvasRef}
         style={{
@@ -189,7 +276,7 @@ export default function ContourView({ params, partnerParams, view = 'yours' }) {
         justifyContent: 'center',
       }}>
         <div style={{ position: 'relative', width: '100%', maxWidth: '500px', aspectRatio: '1' }}>
-          {FEATURE_LABELS.map((feat) => (
+          {showFeatureLabels && FEATURE_LABELS.map((feat) => (
             <span
               key={feat.name}
               style={{
@@ -213,6 +300,47 @@ export default function ContourView({ params, partnerParams, view = 'yours' }) {
               {feat.name}
             </span>
           ))}
+          {/* Growth-journey pins. Drawn above the feature labels: a pin is what
+              the person is actually looking at while placing it. */}
+          {markers.map((m) => (
+            <span
+              key={m.key || m.label}
+              style={{
+                position: 'absolute',
+                left: `${m.x * 100}%`,
+                top: `${m.y * 100}%`,
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '2px',
+                zIndex: 2,
+              }}
+            >
+              <span style={{
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                background: m.tone === 'desire' ? '#f472b6' : 'var(--color-accent)',
+                border: '2px solid #fff',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.45)',
+              }} />
+              {m.label && (
+                <span style={{
+                  fontSize: '0.62rem',
+                  fontWeight: 700,
+                  color: '#fff',
+                  background: m.tone === 'desire' ? 'rgba(244,114,182,0.92)' : 'rgba(127,119,221,0.92)',
+                  padding: '0.05rem 0.35rem',
+                  borderRadius: '4px',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {m.label}
+                </span>
+              )}
+            </span>
+          ))}
+
           {/* Axis labels */}
           {AXIS_LABELS.map((ax) => (
             <span
