@@ -4,6 +4,8 @@
 
 *Naming: the operator chose the "growth journey" direction (Sept 2026). "The Love Difference" below names the measured gap; "Growth Journey" names the feature and the narrative. See §12.5 for the shortlist.*
 
+*Phase A shipped (Sept 2026). See §13 for what was built, what changed against this plan, and why.*
+
 ## 1. The idea in one paragraph
 
 Today the app answers one question: *what is the shape of my intimacy?* Two people can compare shapes. The Love Difference adds a second question: *where does a specific person stand on my landscape, and where do they want to stand?* Person A places Partner B on A's own terrain. B, looking at A's terrain, marks where they want to be. The app draws the route between those two points across A's terrain. The ridges the route must cross are A's real barriers. The valleys it passes through are the stages of the journey. A narrative reads that route as a relationship-growth story. The same happens in the other direction, on B's terrain. The two routes together are the "love difference."
@@ -174,7 +176,7 @@ Solo founder, ~10–15 h/week. Each phase ships alone and is useful alone.
 
 | Phase | Scope | Files | Est. |
 |---|---|---|---|
-| **A. Engine + local difference** | pathfinder, placement helpers, `V2_` codes, PlacementPicker, LoveDifferenceCard with free narrative. Code-only exchange. Unit tests lock λ and persona routes. | `src/terrain/pathfinder.js`, `src/terrain/placement.js`, `src/data/encoding.js`, `src/data/pathNarrative.js`, `src/components/PlacementPicker.jsx`, `src/components/LoveDifferenceCard.jsx`, `ContourView.jsx`, `ResultsScreen.jsx`, `tests/pathfinder.test.js`, `tests/placement.test.js`, `tests/encoding.test.js` | 20–28 h |
+| **A. Engine + local difference** ✅ **shipped** | pathfinder, placement helpers, `V2_` codes, PlacementPicker, GrowthJourneyCard with free narrative. Code-only exchange. Unit tests lock the climb weight and the persona routes. | `src/terrain/pathfinder.js`, `src/terrain/placement.js`, `src/data/encoding.js`, `src/data/pathNarrative.js`, `src/data/journeys.js`, `src/components/PlacementPicker.jsx`, `src/components/GrowthJourneyCard.jsx`, `ContourView.jsx`, `ResultsScreen.jsx`, `PairCompatibility.jsx`, plus five test files | done |
 | **B. The ask link** | migration 009, ask ops in `api/results.js`, `/ask/<slug>` in `api/share.js`, ask page in the SPA, sealed reveal, events. | `supabase/migrations/009_love_difference.sql`, `api/results.js`, `api/share.js`, `middleware.js`, `vercel.json`, `src/components/AskScreen.jsx`, `App.jsx`, `tests/results.test.js`, `tests/share.test.js` | 18–24 h |
 | **C. Path Reading (LLM)** | prompt, `path` sku, card, dormant until price env set (same pattern as the compatibility report). | `api/_pathReadingPrompt.js`, `api/reading.js`, `api/checkout.js`, `api/webhook.js`, `src/components/PathReadingCard.jsx`, `tests/reading.test.js` | 10–14 h |
 | **D. Mutual view + wish pin** | both directions on one screen, L2 wish pin, symmetry sentence. | `LoveDifferenceCard.jsx`, `pathNarrative.js` | 6–10 h |
@@ -193,9 +195,11 @@ Phase A first. It proves the engine and the narrative with zero infrastructure. 
 ## 12. Open questions and decisions
 
 1. **Decided — exclusivity is optional, not required.** The axes cover kind and depth, not structure. A pin cannot say "I want to be your only." So the desire picker offers one optional exclusivity slider (§5), stored as a nullable byte in the code and a nullable column in `placements` (§6). Unset means the narrative stays silent on it. L3 still covers the full 13 dimensions later.
-2. **Tuning λ.** Over-vs-around must feel right on real terrains. Decide the persona test cases before writing the constant.
+2. **Decided in Phase A — the climb weight is 1.6, and steepness is the crest.** Two things changed against this plan while building, both because the first design did not survive contact with real terrains:
+   - **λ became `CLIMB_WEIGHT = 1.6`**, not the ~4 sketched in §4. At 4, a moderate ridge cost more than walking the entire map, so every route went around everything.
+   - **The steepness measure is the crest** (the climb from the start to the route's high point), not total climb. Total climb is dominated by the cost of leaving the start valley and grows with route length, so it made all eight seed personas an "expedition" on every journey. The barrier above *both* endpoints, the other candidate, is zero on most real journeys because the destination is usually itself the high point; it survives as the `wall-between` flag. Both constants are locked by tests that split the personas rather than the journeys.
 3. **Decided — guest answers are allowed.** B can mark a point with no assessment and no account. The assessment CTA follows the submit, and the answer links to B's result if B takes it later (§6). Both paths are measured.
-4. **Regret path.** Should a person be able to un-send an ask after B has answered but before A has placed? Recommendation: yes, until reveal.
+4. **Regret path.** Should a person be able to un-send an ask after B has answered but before A has placed? Recommendation: yes, until reveal. Still open — it is a Phase B question, since Phase A has no ask to un-send.
 5. **Naming — decided in direction.** The feature is a *growth journey*. Two words carry two jobs, so keep both:
    - **The gap** (a noun for the measurement): "the love difference" stays as the internal and methods-page term.
    - **The feature and narrative** (what people see and share): pick one from the growth-journey family. Shortlist, in terrain vocabulary:
@@ -205,3 +209,65 @@ Phase A first. It proves the engine and the narrative with zero infrastructure. 
      - **The Crossing** — keeps the ridge imagery; works as a verb ("make the crossing").
    - UI labels that follow from the default: section header "Your growth journey", ask link CTA "Ask them to mark where they want to be", reveal screen "The journey between you", paid tier "The Journey Reading".
    - Decide the final word before Phase B, because the ask link copy and the `/ask/` page title carry it.
+
+
+---
+
+## 13. Phase A as built (September 2026)
+
+Shipped and verified: 205 unit tests pass, and the flow was driven end to end in
+a real browser across both directions, naming, code rejection, and reload.
+
+### What exists
+
+| Module | What it does |
+|---|---|
+| `src/terrain/placement.js` | A point on a landscape, described: analytic height and fog (matching the rendered field exactly), the named features that register there, plain-language axis words, and `constrainToMap` so a pin stays inside the drawn circle. |
+| `src/terrain/pathfinder.js` | Dijkstra over the 8-connected height field. Charges climb and fog, never descent. Returns the ridges crossed (with the owner's parameter and whether the crossing was below the summit), the ridges the direct line would have hit, the valleys and passes, and a story type. |
+| `src/data/encoding.js` | The `V2_` view-code family: kind + terrain + point + optional exclusivity, 17 bytes. The two code families reject each other. |
+| `src/data/pathNarrative.js` | The free reading: sections built from path facts, rendered through the existing `ReadingRenderer`. |
+| `src/data/journeys.js` | Pins remembered on-device, filed under the pair of landscapes. |
+| `src/components/PlacementPicker.jsx` | Two guided sliders, then a draggable pin, with the live place name. |
+| `src/components/GrowthJourneyCard.jsx` | One symmetric direction component used twice. |
+| `ContourView.jsx` | Gained `markers`, `route`, `onPick`, `showFeatureLabels`. |
+
+### Changes against the plan, and why
+
+1. **The steepness measure and the climb weight** — see §12.2.
+2. **A "lower crossing" fact replaced the rare skirt as the main route signal.**
+   §4 expected routes to go *around* ridges. In practice they bend and cross
+   lower, because going far enough around to drop a ridge below the reporting
+   threshold costs more than climbing. So each crossed ridge now carries the
+   feature's own summit height, and the reading can say the route found a lower
+   way over. `ridgesSkirted` survives for the case that does occur, and is
+   reported *alongside* the primary route reading rather than instead of it.
+3. **A steep route with no ridge on it is a real case, and needed its own copy.**
+   When the climb is the wall of the valley the bond already sits in, the first
+   draft said "open ground" directly after calling the journey steep. It now
+   names the valley itself as the climb — arguably the most useful reading on
+   the map, and the one a naive implementation loses.
+4. **The card requires a loaded partner landscape.** §5 implied the owner could
+   place a partner alone. But the partner's landscape code is the only identity
+   a pin can be filed under, so without it a placement cannot be told apart from
+   one made about somebody else, and it is orphaned on reload. Gating on a
+   loaded partner also makes both mirrored directions always available.
+5. **The reading needed a real voice layer.** Templates that interpolate a
+   pronoun produce "for they" and "they wants". There is now a speaker object
+   with subject, object, possessive and verb agreement, and a test that sweeps
+   every persona, journey, wish and perspective looking for the failures.
+
+### Copy rules now enforced by tests
+
+- Every ridge is attributed to the landscape owner, never to the other person.
+- No text calls the wish too much, unrealistic, or unreasonable.
+- Wherever a difficulty is named, both people are given something to do.
+- No digits anywhere in the prose; distances and heights are bands in words.
+- An unset exclusivity wish produces no text at all.
+
+### Ready for Phase B
+
+The ask link replaces code-passing with `/ask/<slug>`. The pieces it needs are
+in place: `V2_` codes already carry the terrain a point was marked on, the
+sealed-reveal gate is enforced in the card, and `journeys.js` is the local
+mirror of what `placements` will hold. Migration 009 and the ask ops in
+`api/results.js` are unchanged from §6.
