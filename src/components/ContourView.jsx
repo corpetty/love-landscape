@@ -5,6 +5,14 @@ import { constrainToMap } from '../terrain/placement.js';
 
 const CONTOUR_LEVELS = [-0.6, -0.3, 0.0, 0.3, 0.6];
 
+/** Pin colours: where a bond stands, where they want it, where you want it. */
+const PIN_TONE = { placement: '#7F77DD', desire: '#f472b6', wish: '#2dd4a8' };
+const PIN_LABEL_TONE = {
+  placement: 'rgba(127,119,221,0.92)',
+  desire: 'rgba(244,114,182,0.92)',
+  wish: 'rgba(45,212,168,0.94)',
+};
+
 /**
  * Keep a label inside the map box.
  *
@@ -337,7 +345,7 @@ export default function ContourView({
                 width: '14px',
                 height: '14px',
                 borderRadius: '50%',
-                background: m.tone === 'desire' ? '#f472b6' : 'var(--color-accent)',
+                background: PIN_TONE[m.tone] || PIN_TONE.placement,
                 border: '2px solid #fff',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.45)',
               }} />
@@ -346,7 +354,7 @@ export default function ContourView({
                   fontSize: '0.62rem',
                   fontWeight: 700,
                   color: '#fff',
-                  background: m.tone === 'desire' ? 'rgba(244,114,182,0.92)' : 'rgba(127,119,221,0.92)',
+                  background: PIN_LABEL_TONE[m.tone] || PIN_LABEL_TONE.placement,
                   padding: '0.05rem 0.35rem',
                   borderRadius: '4px',
                   whiteSpace: 'nowrap',

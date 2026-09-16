@@ -85,10 +85,13 @@ async function call(body, { entry } = {}) {
  * placed. Returns the slug; the same landscape reuses its open ask, so a link
  * that was already sent keeps working.
  */
-export async function createAsk(clientResultId, point) {
+export async function createAsk(clientResultId, point, wish) {
   const synced = await ensureSynced(clientResultId);
   if (!synced?.result_id) throw new Error("Couldn't reach the server — try again in a moment.");
-  return call({ op: 'ask_create', point }, { entry: synced });
+  // `wish` undefined leaves any stored wish alone; null clears it.
+  const body = { op: 'ask_create', point };
+  if (wish !== undefined) body.wish = wish;
+  return call(body, { entry: synced });
 }
 
 /** Has the question come back? Owner-only. */

@@ -4,7 +4,7 @@
 
 *Naming: the operator chose the "growth journey" direction (Sept 2026). "The Love Difference" below names the measured gap; "Growth Journey" names the feature and the narrative. See §12.5 for the shortlist.*
 
-*Phases A, B, C and E shipped (Sept 2026). See §13, §14, §15 and §16 for what was built, what changed against this plan, and why. Phase D remains the only unbuilt piece.*
+*All five phases shipped (Sept 2026). See §13–§17 for what was built, what changed against this plan, and why.*
 
 ## 1. The idea in one paragraph
 
@@ -179,7 +179,7 @@ Solo founder, ~10–15 h/week. Each phase ships alone and is useful alone.
 | **A. Engine + local difference** ✅ **shipped** | pathfinder, placement helpers, `V2_` codes, PlacementPicker, GrowthJourneyCard with free narrative. Code-only exchange. Unit tests lock the climb weight and the persona routes. | `src/terrain/pathfinder.js`, `src/terrain/placement.js`, `src/data/encoding.js`, `src/data/pathNarrative.js`, `src/data/journeys.js`, `src/components/PlacementPicker.jsx`, `src/components/GrowthJourneyCard.jsx`, `ContourView.jsx`, `ResultsScreen.jsx`, `PairCompatibility.jsx`, plus five test files | done |
 | **B. The ask link** ✅ **shipped** | migration 009, ask ops in `api/results.js`, `/ask/<slug>` served by `api/share.js`, ask screen in the SPA, sealed reveal enforced server-side, withdrawal on both sides, events and milestones. | `supabase/migrations/009_growth_journey.sql`, `api/results.js`, `api/share.js`, `vercel.json`, `src/data/asksClient.js`, `src/components/AskScreen.jsx`, `GrowthJourneyCard.jsx`, `Footer.jsx`, `App.jsx`, `public/privacy.html`, `tests/asks.test.js`, `tests/share.test.js` | done |
 | **C. Journey Reading (LLM)** ✅ **shipped** | prompt grounded in computed route facts, `journey` sku entitled per ask, card dormant until priced, migration 010. | `supabase/migrations/010_journey_reading.sql`, `api/_pathReadingPrompt.js`, `api/reading.js`, `api/checkout.js`, `api/webhook.js`, `src/components/JourneyReadingCard.jsx`, `GrowthJourneyCard.jsx`, `ResultsScreen.jsx`, `.env.example`, `tests/journeyReading.test.js` | done |
-| **D. Mutual view + wish pin** | both directions on one screen, L2 wish pin, symmetry sentence. | `LoveDifferenceCard.jsx`, `pathNarrative.js` | 6–10 h |
+| **D. Mutual view + wish pin** ✅ **shipped** | the owner's wish pin, the two-destination verdict, a third pin tone; both directions and the symmetry sentence already shipped with A and B. | `src/data/wishAlignment.js`, `GrowthJourneyCard.jsx`, `ContourView.jsx`, `api/results.js`, `src/data/asksClient.js`, `tests/wishAlignment.test.js` | done |
 | **E. Perception layer** ✅ **shipped** | assessment reworded "about them", perceived landscape, per-dimension signed gap, radar overlay, reading. | `src/data/questions.js` (about phrasings + `questionsFor`), `AssessmentScreen.jsx` (mode prop), `src/data/perception.js`, `src/data/perceptions.js`, `src/components/PerceptionGapCard.jsx`, `RadarView.jsx`, `ResultsScreen.jsx`, `App.jsx`, `tests/perception.test.js`, `tests/perceptions.test.js` | done |
 | **F. Movement over time** | re-place later, show the route travelled. Needs accounts. | `placements` history, `MyLandscapes.jsx` | later |
 
@@ -506,5 +506,64 @@ difference under fifteen points is called matched rather than a misreading.
 
 ### What is left
 
-**Phase D** — the mutual view and the owner's wish pin — is the only unbuilt
-phase, and nothing shipped depends on it.
+Nothing. Phase D closed the set — see §17.
+
+
+---
+
+## 17. Phase D as built (September 2026)
+
+Shipped and verified: 350 unit tests, and the flow driven in a browser against
+the real handlers — the wish withheld until their answer arrives, the verdict,
+three pins on the map, the partner's view checked for leakage, and survival
+across a reload.
+
+### The question it answers
+
+The journey had two pins on one landscape: where a bond stands, and where the
+other person says they want it. The wish adds a third — where the owner would
+like it — and with it the question the feature had been circling.
+
+**The distance between the two destinations is a better question than either
+route.** Two people can both be asking for a long, steep crossing and be asking
+for the *same* crossing; two people can both be asking for a small move and be
+asking for *opposite* ones. A reading that compares only how far each wants to
+travel cannot tell those apart, and that difference is the whole matter. So the
+verdict turns on where the two marks land and which way they pull from the
+current point; "who is asking for the bigger move" is a tail, not the headline.
+
+### The seven verdicts
+
+| Verdict | What it names |
+|---|---|
+| Both content | Neither is asking for a move — easy to leave unspoken until one assumes the other is waiting. |
+| Same place | Same ground. The rarer, more fortunate problem: only the crossing is left. |
+| Same region | Same shape, different degree — and degree negotiates in a way direction does not. |
+| You would stay / They would stay | One of you would leave it exactly where it is. **Explicitly not a refusal**: "not yet" and "not this" sound identical from outside and are very different to live with. |
+| Opposite ways | Named as *direction*, not pace — the case most often mistaken for a pace problem. |
+| Different places | Not opposite, but genuinely different ground. |
+
+### Decisions worth keeping
+
+1. **The wish is offered only after their answer arrives.** Marking where you
+   want a bond to be while still waiting to hear where they want it invites you
+   to answer twice — once honestly and once as the thing you would settle for —
+   and then to read their answer against whichever of yours it suits. Asking
+   afterwards costs nothing: their answer is already sealed.
+2. **It is never returned to the person who answered.** `ask_status` carries it
+   because that is the owner's own view; `ask_answer` does not. A wish is the
+   owner's statement about the relationship, theirs to make in their own words
+   rather than to have revealed by a page.
+3. **Stored with the ask, not only on the device** — the failure this feature
+   has now hit twice.
+4. **A wish is neither a promise nor a demand,** said in every verdict, along
+   with the fact that their answer was given without sight of it. The sealed
+   order is what makes both answers worth anything, and the reading is the only
+   place the reader is told it held.
+
+### Already shipped earlier
+
+The plan listed "both directions on one screen" and the symmetry sentence under
+Phase D. Both arrived with Phases A and B — the card has always rendered two
+mirrored directions, and `symmetryLine` has always compared them. Phase D was
+therefore only the wish, which turned out to be the substantial half.

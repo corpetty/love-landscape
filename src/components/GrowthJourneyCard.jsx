@@ -10,6 +10,7 @@ import { getJourney, saveJourney } from '../data/journeys.js';
 import { DISCLAIMER } from '../data/recommendations.js';
 import { record } from '../data/journey.js';
 import { createAsk, fetchAskStatus, withdrawAsk, askUrl } from '../data/asksClient.js';
+import { compareWishes, buildWishSection } from '../data/wishAlignment.js';
 
 /**
  * The Growth Journey — where a bond stands on someone's landscape, where it
@@ -64,7 +65,9 @@ export default function GrowthJourneyCard({ params, code, partnerParams, partner
         const next = { ...prev };
         if (status.owner_point && !prev.placement) next.placement = status.owner_point;
         if (status.partner_point) next.theirDesire = status.partner_point;
-        if (next.placement !== prev.placement || next.theirDesire !== prev.theirDesire) {
+        if (status.owner_wish && !prev.ownWish) next.ownWish = status.owner_wish;
+        if (next.placement !== prev.placement || next.theirDesire !== prev.theirDesire
+            || next.ownWish !== prev.ownWish) {
           saveJourney(code, partnerCode, next);
         }
         return next;
@@ -138,6 +141,11 @@ export default function GrowthJourneyCard({ params, code, partnerParams, partner
         askSlug={askSlug}
         onSyncAsk={syncAsk}
         onAskSlug={setAskSlug}
+        /* The third pin: where the OWNER would like the bond to be. Only on
+           their own landscape — a wish about someone else's terrain is not a
+           thing this feature has any business recording. */
+        ownWish={state.ownWish}
+        setOwnWish={(v) => put({ ownWish: v })}
       />
 
       {partnerParams && (
@@ -217,6 +225,7 @@ function JourneyDirection({
   heading, terrain, terrainCode, myKind, mine, setMine, theirs, setTheirs,
   path, perspective, partnerName, onCopy, copied, copyKey, style,
   clientResultId = null, askSlug = null, onSyncAsk = null, onAskSlug = null,
+  ownWish = null, setOwnWish = null,
 }) {
   // Two forms of the other person are needed and are not interchangeable:
   // "them" reads as an object ("ask them"), "they" as a subject ("do they
@@ -234,6 +243,8 @@ function JourneyDirection({
   const [draft, setDraft] = useState(null);
   const [codeInput, setCodeInput] = useState('');
   const [error, setError] = useState('');
+  const [editingWish, setEditingWish] = useState(false);
+  const [wishDraft, setWishDraft] = useState(null);
 
   // A new pairing must not inherit the last one's half-finished edit.
   useEffect(() => {
@@ -241,6 +252,8 @@ function JourneyDirection({
     setDraft(null);
     setCodeInput('');
     setError('');
+    setEditingWish(false);
+    setWishDraft(null);
   }, [terrainCode]);
 
   const myCode = mine
@@ -449,9 +462,29 @@ function JourneyDirection({
             markers={[
               { key: 'start', x: path.start.x, y: path.start.y, label: PIN_LABEL.placement, tone: 'placement' },
               { key: 'end', x: path.end.x, y: path.end.y, label: PIN_LABEL.desire, tone: 'desire' },
+              ...(ownWish ? [{ key: 'wish', x: ownWish.x, y: ownWish.y, label: 'You', tone: 'wish' }] : []),
             ]}
             showFeatureLabels={false}
           />
+
+          {setOwnWish && (
+            <WishBlock
+              terrain={terrain}
+              current={path.start}
+              theirDesire={path.end}
+              ownWish={ownWish}
+              setOwnWish={setOwnWish}
+              editing={editingWish}
+              setEditing={setEditingWish}
+              draft={wishDraft}
+              setDraft={setWishDraft}
+              partnerName={partnerName}
+              other={other}
+              clientResultId={clientResultId}
+              askSlug={askSlug}
+            />
+          )}
+
           <div style={{ marginTop: '1rem' }}>
             <ReadingRenderer text={narrativeToMarkdown(narrative)} />
           </div>
@@ -484,6 +517,8 @@ function JourneyDirection({
 function AskLinkPanel({ clientResultId, point, other, onCopy, copied, askSlug, onSyncAsk, onAskSlug, answered = false }) {
   const [phase, setPhase] = useState('idle'); // idle | creating | checking | closing
   const [error, setError] = useState('');
+  const [editingWish, setEditingWish] = useState(false);
+  const [wishDraft, setWishDraft] = useState(null);
   const [checked, setChecked] = useState(false);
 
   async function create() {
@@ -592,6 +627,100 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, askSlug, o
         Closing it is permanent: the link stops working for good, and any answer on it is dropped.
       </p>
       {error && <p role="alert" style={{ color: '#f97066', fontSize: '0.84rem', marginTop: '0.35rem' }}>{error}</p>}
+    </div>
+  );
+}
+
+
+/**
+ * The owner's own wish, and what the two wishes say together.
+ *
+ * Offered only after their answer has arrived, and deliberately so. Marking
+ * where you want a bond to be while still waiting to hear where they want it
+ * invites you to answer twice — once honestly and once as the thing you would
+ * settle for — and then to read their answer against whichever of yours it
+ * suits. Asking afterwards costs nothing, because their answer is already
+ * sealed by then and cannot be shaped by yours.
+ */
+function WishBlock({
+  terrain, current, theirDesire, ownWish, setOwnWish,
+  editing, setEditing, draft, setDraft, partnerName, other, clientResultId, askSlug,
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function save() {
+    const next = draft || { x: 0.5, y: 0.5 };
+    setSaving(true);
+    setError('');
+    setOwnWish(next);
+    // Kept with the ask when there is one, so it survives this device. Never
+    // returned to whoever answered: ask_answer does not carry it.
+    if (clientResultId && askSlug) {
+      try {
+        await createAsk(clientResultId, { x: current.x, y: current.y }, { x: next.x, y: next.y });
+      } catch (e) {
+        setError(`Saved here, but not to your account: ${e.message}`);
+      }
+    }
+    setSaving(false);
+    setEditing(false);
+    setDraft(null);
+    record('placement_set', { kind: 'wish', role: 'owner' });
+  }
+
+  if (editing || !ownWish) {
+    if (!editing) {
+      return (
+        <div className="card" style={{ marginTop: '1rem', padding: '1rem 1.15rem' }}>
+          <h5 style={{ fontSize: '0.9rem', marginBottom: '0.35rem' }}>Where would you like it to be?</h5>
+          <p style={{ fontSize: '0.84rem', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: '0.7rem' }}>
+            You have seen where {other} would like this bond to sit. Mark your own answer and the two
+            can be read together — which is a different question from how far either of you is asking
+            to move, and usually the more important one.
+          </p>
+          <button className="btn-primary" onClick={() => { setDraft(ownWish || { ...current }); setEditing(true); }}>
+            Mark where I want it
+          </button>
+        </div>
+      );
+    }
+    return (
+      <div style={{ marginTop: '1rem' }}>
+        <PlacementPicker
+          params={terrain}
+          value={draft || { ...current }}
+          onChange={setDraft}
+          onDone={save}
+          tone="wish"
+          title="Where would you like this bond to be?"
+          prompt="Your own answer, on your own landscape. Not a promise and not a demand — just where you would like it to sit."
+          pinLabel="You"
+          doneLabel={saving ? 'Saving…' : 'Save my answer'}
+        />
+        {error && <p role="alert" style={{ color: '#f97066', fontSize: '0.84rem', marginTop: '0.4rem' }}>{error}</p>}
+      </div>
+    );
+  }
+
+  const cmp = compareWishes(terrain, current, theirDesire, ownWish);
+  const section = cmp && buildWishSection(cmp, partnerName);
+  if (!section) return null;
+
+  return (
+    <div className="card" style={{ marginTop: '1rem', padding: '1.15rem' }}>
+      <h4 style={{ fontSize: '1rem', marginBottom: '0.5rem' }}>{section.title}</h4>
+      <div style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.75 }}>
+        {section.text.split('\n\n').map((para, i) => <p key={i} style={{ marginBottom: '0.7rem' }}>{para}</p>)}
+      </div>
+      <button
+        className="btn-secondary"
+        onClick={() => { setDraft(ownWish); setEditing(true); }}
+        style={{ fontSize: '0.8rem' }}
+      >
+        Change my answer
+      </button>
+      {error && <p role="alert" style={{ color: '#f97066', fontSize: '0.84rem', marginTop: '0.4rem' }}>{error}</p>}
     </div>
   );
 }
