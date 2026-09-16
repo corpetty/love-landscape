@@ -59,5 +59,17 @@ export async function submitLandscape(params, demographics = {}) {
   }
 
   const { error } = await supabase.from('submissions').insert(row);
-  return { error: error?.message || null };
+  if (!error) return { error: null };
+
+  // Everything the database said, not just the headline. A research
+  // contribution failed silently for every signed-in person for months
+  // because the only thing that survived this boundary was a boolean's worth
+  // of information — the actual message named the row-level security policy
+  // that was refusing them.
+  return {
+    error: error.message || 'Unknown error',
+    code: error.code || null,
+    details: error.details || null,
+    hint: error.hint || null,
+  };
 }

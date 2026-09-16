@@ -24,12 +24,14 @@ import { encodeParams, decodeParams } from './data/encoding.js';
 import { getEffectiveConfig, adjustParams } from './data/llmClient.js';
 import { record, getVariant, setPendingPartner } from './data/journey.js';
 import { recordResult } from './data/resultsClient.js';
+import { savePerception } from './data/perceptions.js';
 
 const STORAGE_KEY = 'love-landscape-result';
 
 const TITLES = {
   intro: 'Love Landscape — The Shape of Intimacy',
   assessment: 'Assessment — Love Landscape',
+  assessmentAbout: 'Answering about someone — Love Landscape',
   loadCode: 'Load Code — Love Landscape',
   refining: 'Refining — Love Landscape',
   results: 'Your Landscape — Love Landscape',
@@ -147,6 +149,7 @@ export default function App() {
   const [sharedData, setSharedData] = useState(null); // { slug, code, params } from /r/<slug>
   const [archetypeFocus, setArchetypeFocus] = useState(null); // archetype key from /a/<key>
   const [askData, setAskData] = useState(null); // { slug, code, answered } from /ask/<slug>
+  const [aboutTarget, setAboutTarget] = useState(null); // { code, name } when answering about someone
   const [scienceFocus, setScienceFocus] = useState(null); // dimension index for the science view
   const [scienceReturn, setScienceReturn] = useState('results'); // screen to return to from science view
   // Set at assessment completion, consumed once when the final result renders:
@@ -292,8 +295,39 @@ export default function App() {
   }, [screen, code]);
 
   function handleBegin() {
+    setAboutTarget(null);
     record('assessment_start');
     setScreen('assessment');
+  }
+
+  /**
+   * Answer the same questions about somebody else.
+   *
+   * Kept separate from the normal completion path on purpose: the result is a
+   * guess about another person, so it must never be saved as this person's own
+   * landscape, synced, published, or offered to research.
+   */
+  function handleBeginAbout(target) {
+    setAboutTarget(target);
+    record('assessment_start', { about: true });
+    setScreen('assessment');
+  }
+
+  function handleAboutComplete(answers) {
+    const perceived = computeParams(answers);
+    if (aboutTarget?.code) {
+      savePerception(aboutTarget.code, perceived);
+      // The comparison lives in the results screen's own state, and that
+      // screen unmounts while the questions are being answered. Without
+      // handing the partner back, someone returns from nineteen questions
+      // about a specific person to a screen that no longer knows who they
+      // meant — and the gap they just built has nothing to be measured
+      // against, so the feature silently does nothing.
+      setPendingPartner(aboutTarget.code);
+    }
+    record('assessment_complete', { about: true });
+    setAboutTarget(null);
+    setScreen('results');
   }
 
   function handleLoadCode() {
@@ -505,7 +539,20 @@ export default function App() {
       );
       break;
     case 'assessment':
-      content = <AssessmentScreen onComplete={handleAssessmentComplete} onBack={() => setScreen('intro')} />;
+      content = aboutTarget
+        ? (
+          <AssessmentScreen
+            mode="about"
+            aboutName={aboutTarget.name}
+            onComplete={handleAboutComplete}
+            onBack={() => {
+              if (aboutTarget?.code) setPendingPartner(aboutTarget.code);
+              setAboutTarget(null);
+              setScreen('results');
+            }}
+          />
+        )
+        : <AssessmentScreen onComplete={handleAssessmentComplete} onBack={() => setScreen('intro')} />;
       break;
     case 'loadCode':
       content = <LoadCodeScreen onLoad={handleCodeLoaded} onBack={() => setScreen('intro')} />;
@@ -516,6 +563,7 @@ export default function App() {
     case 'results':
       content = (
         <ResultsScreen
+          onAnswerAbout={handleBeginAbout}
           params={params}
           baseParams={baseParams}
           code={code}

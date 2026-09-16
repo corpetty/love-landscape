@@ -5,10 +5,21 @@ import {
 } from 'recharts';
 import { generateReading } from '../data/interpretation.js';
 
-const ACCENT = '#7F77DD';
-const PARTNER_COLOR = '#2dd4a8';
+// Exported so a legend elsewhere names the same colours the chart draws,
+// rather than a copy that drifts the first time either is adjusted.
+export const ACCENT = '#7F77DD';
+export const PARTNER_COLOR = '#2dd4a8';
 
-export default function RadarView({ params, partnerParams, view = 'yours' }) {
+/**
+ * @param {{yours?: string, theirs?: string}} [props.seriesLabels]
+ *   What the two series are called. The defaults suit a comparison of two
+ *   people's own landscapes; the perception view draws a guess about someone
+ *   over that person's own answers, where "Yours" would name the wrong thing
+ *   entirely.
+ */
+export default function RadarView({ params, partnerParams, view = 'yours', seriesLabels }) {
+  const yoursLabel = seriesLabels?.yours || 'Yours';
+  const theirsLabel = seriesLabels?.theirs || 'Theirs';
   const containerRef = useRef(null);
   const [narrow, setNarrow] = useState(false);
 
@@ -70,7 +81,7 @@ export default function RadarView({ params, partnerParams, view = 'yours' }) {
 
           {showYours && (
             <Radar
-              name="Yours"
+              name={yoursLabel}
               dataKey="yours"
               stroke={ACCENT}
               fill={ACCENT}
@@ -80,7 +91,7 @@ export default function RadarView({ params, partnerParams, view = 'yours' }) {
           )}
           {showTheirs && (
             <Radar
-              name="Theirs"
+              name={theirsLabel}
               dataKey="theirs"
               stroke={PARTNER_COLOR}
               fill={PARTNER_COLOR}

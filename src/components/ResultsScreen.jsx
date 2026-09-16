@@ -7,6 +7,7 @@ import ReadingsSection from './ReadingsSection.jsx';
 import CompatibilityReportCard from './CompatibilityReportCard.jsx';
 import PairCompatibility from './PairCompatibility.jsx';
 import GrowthJourneyCard from './GrowthJourneyCard.jsx';
+import PerceptionGapCard from './PerceptionGapCard.jsx';
 import { decodeParams, encodeParams } from '../data/encoding.js';
 import { generateRecommendations } from '../data/recommendations.js';
 import { addRecentComparison, getRecentComparisons, comparisonDisplayName, getComparisonName } from '../data/comparisons.js';
@@ -17,7 +18,7 @@ import SharePageCard from './SharePageCard.jsx';
 import { useAuth, authAvailable, completeSignup } from '../data/auth.js';
 import { getOwnedResultByCode } from '../data/resultsClient.js';
 
-export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount, onScience, initialPartnerCode }) {
+export default function ResultsScreen({ params, baseParams, code, contextAnswers, refineError, onReset, onAbout, onOpenSettings, onOpenAccount, onScience, onAnswerAbout, initialPartnerCode }) {
   const wasRefined = baseParams && params !== baseParams &&
     baseParams.some((v, i) => Math.abs(v - params[i]) > 0.001);
   const [partnerCode, setPartnerCode] = useState('');
@@ -284,6 +285,18 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
 
       {/* Recommendations */}
       <RecommendationCards recommendations={recommendations} />
+
+      {/* How well do you know them — your model of the partner, against their
+          own answers. Needs their landscape loaded, because the whole point is
+          the comparison; there is nothing to check a guess against without it. */}
+      {partnerParams && onAnswerAbout && (
+        <PerceptionGapCard
+          partnerParams={partnerParams}
+          partnerCode={canonicalPartnerCode}
+          partnerName={partnerName}
+          onStart={() => onAnswerAbout({ code: canonicalPartnerCode, name: partnerName })}
+        />
+      )}
 
       {/* Growth Journey — where one particular bond stands on a landscape,
           where it wants to be, and the route between.

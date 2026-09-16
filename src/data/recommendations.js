@@ -102,7 +102,13 @@ export function generateRecommendations(paramsA, paramsB) {
   return results;
 }
 
-const COMPAT_LABELS = [
+/**
+ * The dimensions as a person would say them out loud. PARAM_LABELS.short is
+ * written for a chart axis ("Romantic bond"); these are written for a sentence
+ * ("when you answered about romantic connection"). Shared so the compatibility
+ * snapshot and the perception reading speak the same way.
+ */
+export const COMPAT_LABELS = [
   'deep friendships', 'romantic connection', 'the tender middle', 'physical warmth',
   'emotional grounding', 'need for structure', 'comfort with ambiguity', 'openness',
   'self-knowledge', 'self-intimacy', 'conflict approach', 'playfulness', 'attachment security',

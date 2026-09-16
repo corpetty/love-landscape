@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { questions } from '../data/questions.js';
+import { questionsFor } from '../data/questions.js';
 import { computeParams } from '../data/paramCompute.js';
 import { getVariant } from '../data/journey.js';
 import ContourView from './ContourView.jsx';
@@ -9,7 +9,14 @@ import ContourView from './ContourView.jsx';
 // question wall). Variant assignment/kill switch live in journey.js.
 const PREVIEW_FROM_QUESTION = 5;
 
-export default function AssessmentScreen({ onComplete, onBack }) {
+/**
+ * @param {'self'|'about'} [props.mode]  whose landscape is being answered for.
+ *   'about' asks the same nineteen questions as you think somebody else would
+ *   answer them, which produces your model of that person.
+ * @param {string|null} [props.aboutName]  who that person is, if named.
+ */
+export default function AssessmentScreen({ onComplete, onBack, mode = 'self', aboutName = null }) {
+  const questions = questionsFor(mode);
   const [showIntro, setShowIntro] = useState(true);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -74,7 +81,9 @@ export default function AssessmentScreen({ onComplete, onBack }) {
 
   // Early return after all hooks
   if (showIntro) {
-    return <AssessmentIntro onStart={() => setShowIntro(false)} onBack={onBack} />;
+    return mode === 'about'
+      ? <AboutIntro name={aboutName} onStart={() => setShowIntro(false)} onBack={onBack} />
+      : <AssessmentIntro onStart={() => setShowIntro(false)} onBack={onBack} />;
   }
 
   const progress = (current + 1) / questions.length;
@@ -101,8 +110,9 @@ export default function AssessmentScreen({ onComplete, onBack }) {
             <ContourView params={previewParams} />
           </div>
           <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-            Your terrain is taking shape — {Object.keys(answers).length} of {questions.length} answers
-            mapped. It sharpens with every question.
+            {mode === 'about'
+              ? `The landscape you are sketching for ${aboutName || 'them'} is taking shape — ${Object.keys(answers).length} of ${questions.length} answers mapped.`
+              : `Your terrain is taking shape — ${Object.keys(answers).length} of ${questions.length} answers mapped. It sharpens with every question.`}
           </p>
         </div>
       )}
@@ -112,6 +122,11 @@ export default function AssessmentScreen({ onComplete, onBack }) {
       }}>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
           Question {current + 1} of {questions.length}
+          {mode === 'about' && (
+            <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>
+              {' '}· answering as {aboutName || 'they'} would
+            </span>
+          )}
         </p>
 
         <h2 style={{ fontSize: '1.35rem', marginBottom: '0.5rem', lineHeight: 1.4 }}>
@@ -339,6 +354,43 @@ function ScenarioInput({ options, selected, onSelect }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+
+/**
+ * The intro for answering about somebody else.
+ *
+ * It spends most of its words on permission to be wrong. Without that, the
+ * exercise reads as a test of how good a partner you are, people answer as
+ * they wish they saw the other person, and the gap it measures disappears
+ * into flattery.
+ */
+function AboutIntro({ name, onStart, onBack }) {
+  const them = name || 'them';
+  return (
+    <div style={{ maxWidth: '560px', margin: '0 auto', paddingTop: '2.5rem' }}>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: '0.6rem' }}>
+        The same questions, about {them}
+      </h2>
+      <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', lineHeight: 1.75, marginBottom: '1rem' }}>
+        Nineteen questions, answered as you think {them} would answer them. Not as you would.
+        Not as you hope {name ? `${name} is` : 'they are'}.
+      </p>
+      <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', lineHeight: 1.75, marginBottom: '1rem' }}>
+        <strong>Guess freely.</strong> Being wrong is the useful part — a guess that turns out to
+        miss is the clearest signal there is of something worth asking about. Answering the way you
+        would like {them} to be makes the whole exercise say nothing.
+      </p>
+      <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', lineHeight: 1.75, marginBottom: '1.5rem' }}>
+        What you write stays on this device. {name || 'They'} will never see it, and there is
+        nothing here to send.
+      </p>
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <button className="btn-primary" onClick={onStart}>Start</button>
+        <button className="btn-secondary" onClick={onBack}>Back</button>
+      </div>
     </div>
   );
 }
