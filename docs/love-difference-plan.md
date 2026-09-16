@@ -4,7 +4,7 @@
 
 *Naming: the operator chose the "growth journey" direction (Sept 2026). "The Love Difference" below names the measured gap; "Growth Journey" names the feature and the narrative. See §12.5 for the shortlist.*
 
-*Phases A and B shipped (Sept 2026). See §13 and §14 for what was built, what changed against this plan, and why.*
+*Phases A, B and C shipped (Sept 2026). See §13, §14 and §15 for what was built, what changed against this plan, and why.*
 
 ## 1. The idea in one paragraph
 
@@ -178,7 +178,7 @@ Solo founder, ~10–15 h/week. Each phase ships alone and is useful alone.
 |---|---|---|---|
 | **A. Engine + local difference** ✅ **shipped** | pathfinder, placement helpers, `V2_` codes, PlacementPicker, GrowthJourneyCard with free narrative. Code-only exchange. Unit tests lock the climb weight and the persona routes. | `src/terrain/pathfinder.js`, `src/terrain/placement.js`, `src/data/encoding.js`, `src/data/pathNarrative.js`, `src/data/journeys.js`, `src/components/PlacementPicker.jsx`, `src/components/GrowthJourneyCard.jsx`, `ContourView.jsx`, `ResultsScreen.jsx`, `PairCompatibility.jsx`, plus five test files | done |
 | **B. The ask link** ✅ **shipped** | migration 009, ask ops in `api/results.js`, `/ask/<slug>` served by `api/share.js`, ask screen in the SPA, sealed reveal enforced server-side, withdrawal on both sides, events and milestones. | `supabase/migrations/009_growth_journey.sql`, `api/results.js`, `api/share.js`, `vercel.json`, `src/data/asksClient.js`, `src/components/AskScreen.jsx`, `GrowthJourneyCard.jsx`, `Footer.jsx`, `App.jsx`, `public/privacy.html`, `tests/asks.test.js`, `tests/share.test.js` | done |
-| **C. Path Reading (LLM)** | prompt, `path` sku, card, dormant until price env set (same pattern as the compatibility report). | `api/_pathReadingPrompt.js`, `api/reading.js`, `api/checkout.js`, `api/webhook.js`, `src/components/PathReadingCard.jsx`, `tests/reading.test.js` | 10–14 h |
+| **C. Journey Reading (LLM)** ✅ **shipped** | prompt grounded in computed route facts, `journey` sku entitled per ask, card dormant until priced, migration 010. | `supabase/migrations/010_journey_reading.sql`, `api/_pathReadingPrompt.js`, `api/reading.js`, `api/checkout.js`, `api/webhook.js`, `src/components/JourneyReadingCard.jsx`, `GrowthJourneyCard.jsx`, `ResultsScreen.jsx`, `.env.example`, `tests/journeyReading.test.js` | done |
 | **D. Mutual view + wish pin** | both directions on one screen, L2 wish pin, symmetry sentence. | `LoveDifferenceCard.jsx`, `pathNarrative.js` | 6–10 h |
 | **E. Perception layer** | assessment reworded "about them", perceived-B landscape, per-dimension perception gap, radar overlay. | `AssessmentScreen.jsx` (mode prop), `src/data/questions.js` (about-them phrasings), new `PerceptionGap.jsx`, tests | 14–20 h |
 | **F. Movement over time** | re-place later, show the route travelled. Needs accounts. | `placements` history, `MyLandscapes.jsx` | later |
@@ -354,3 +354,81 @@ The paid Journey Reading needs a `path` sku in `api/reading.js` and a prompt
 beside `_fullReadingPrompt.js`. Both directions of path facts are already
 available client-side, and the server now holds the pins a purchased reading
 would be generated from.
+
+
+---
+
+## 15. Phase C as built (September 2026)
+
+Shipped and verified: 288 unit tests pass, and the whole purchase path was
+driven in a browser with a price set, against the real handlers with Stripe and
+the model stubbed — offer hidden until the question has an answer, shown after,
+purchase, return, entitlement, generation, render, regenerate.
+
+### What it is
+
+A deep reading of ONE growth journey, **entitled per ask**. A second question
+about the same landscape is a different crossing and is not covered by an
+earlier purchase. Dormant until `STRIPE_PRICE_JOURNEY` and `VITE_JOURNEY_PRICE`
+are both set, the same pattern the compatibility report uses.
+
+What makes it worth paying for is not more words about two pins. The engine has
+already computed hard facts — which named ridges the route crosses, how high
+each stands where the route meets it, whether a lower way over exists, whether
+the climb is the valley wall itself, how much ground is unmapped — and the
+prompt asks the model to interpret those. **The free reading states the facts;
+the paid one thinks about them**, and the card says exactly that rather than
+implying the free version is a teaser.
+
+### Decisions worth keeping
+
+1. **A new column, not an overloaded one.** `purchases.ask_id` rather than
+   reusing `partner_code`, which on the compatibility report already means
+   "the other person's landscape". A journey is not a pairing of two
+   landscapes; it is two pins on one.
+2. **The route is recomputed server-side from the stored pins.** A buyer who
+   could post their own route facts could commission a reading of a journey
+   that never happened.
+3. **Entitlement is separate from readability.** Collapsing them told a buyer
+   whose partner had withdrawn their answer that no purchase existed, which
+   reads as if their money had vanished. They stay entitled and are told what
+   actually happened.
+4. **The owner's own note never reaches the prompt.** It was written before the
+   question went out; it is their private reading of the bond, not part of the
+   answer they asked for.
+5. **Ask path only.** The codes-only path keeps pins on the device, so the
+   server could not regenerate what it sold. The card renders nothing there.
+
+### What the browser run caught that no unit test could
+
+- **The card required a loaded partner landscape.** That gate came from Phase A,
+  where a partner's code was the only identity a pin could be filed under — but
+  an ask *is* an identity, and the person answering one may have no landscape at
+  all. The ask link hid the journey from exactly the people who used it, and
+  after returning from checkout the card never mounted to unlock what had just
+  been bought. It now shows whenever there is something to file a journey
+  under: a loaded partner, or a landscape this device owns.
+- **The pins did not survive a page load.** The link panel owned the ask fetch,
+  but only rendered once a placement existed, so a device with no local pins
+  could never learn about the pins the server already held and would ask the
+  owner to place the same bond again. The card owns the fetch now: the ask is
+  the durable record, localStorage is the cache.
+- **The reading quoted the wrong person.** A note is written by whoever says
+  where they want the bond to be, and in the owner's own view that is the other
+  person. Keying it to the reader dropped the most personal thing the other
+  person said, precisely where it mattered most.
+
+### Deployment notes
+
+- Apply `supabase/migrations/010_journey_reading.sql`. Additive: one nullable
+  column on `purchases` plus a partial index.
+- Create the Stripe price, then set `STRIPE_PRICE_JOURNEY` and
+  `VITE_JOURNEY_PRICE`. Until both exist the offer does not render.
+- The webhook resolves the ask slug carried in checkout metadata to an id, and
+  degrades gracefully if migration 010 has not been applied — a paying
+  customer's entitlement is never held up by a migration.
+
+### What is left
+
+Phase D (the mutual view and the owner's wish pin) and Phase E (the perception
+layer) are unchanged from §10. Neither is required by anything shipped so far.
