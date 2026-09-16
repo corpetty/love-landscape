@@ -521,6 +521,32 @@ async function opAskCreate(req, res, supabase, body, isDev) {
   }, { onConflict: 'ask_id,author_role,kind' });
   if (pErr) return res.status(503).json({ error: 'Storage error' });
 
+  // The owner's WISH — where they would like the bond to be — is optional and
+  // is never returned to the person answering. They answer without seeing it,
+  // which is the only thing that makes either answer worth anything; and a
+  // wish is the owner's statement about the relationship, theirs to say in
+  // their own words rather than to have revealed by a page.
+  if (body.wish !== undefined) {
+    if (body.wish === null) {
+      await supabase.from('placements').delete()
+        .eq('ask_id', ask.id).eq('author_role', 'owner').eq('kind', 'wish');
+    } else {
+      const wish = cleanPoint(body.wish);
+      if (wish.error) return res.status(400).json({ error: wish.error });
+      const { error: wErr } = await supabase.from('placements').upsert({
+        ask_id: ask.id,
+        author_role: 'owner',
+        kind: 'wish',
+        x: wish.x,
+        y: wish.y,
+        exclusivity: wish.exclusivity,
+        note: wish.note,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'ask_id,author_role,kind' });
+      if (wErr) return res.status(503).json({ error: 'Storage error' });
+    }
+  }
+
   return res.json({ ok: true, slug: ask.slug });
 }
 
@@ -633,12 +659,16 @@ async function opAskStatus(req, res, supabase, body) {
 
   const owner = (pins || []).find((p) => p.author_role === 'owner' && p.kind === 'current');
   const partner = (pins || []).find((p) => p.author_role === 'partner' && p.kind === 'desired');
+  const wish = (pins || []).find((p) => p.author_role === 'owner' && p.kind === 'wish');
 
+  // Owner-only view, so every pin comes back in full — including the wish,
+  // which ask_answer deliberately never returns.
   return res.json({
     ok: true,
     ask: { slug: ask.slug, status: ask.status },
     owner_point: placementOut(owner),
     partner_point: placementOut(partner),
+    owner_wish: placementOut(wish),
   });
 }
 
