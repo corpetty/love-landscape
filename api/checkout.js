@@ -22,14 +22,16 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { sessionId, sku, resultId, partnerCode } = req.body || {};
+  const { sessionId, sku, resultId, partnerCode, askSlug } = req.body || {};
   if (!sessionId) return res.status(400).json({ error: 'Missing sessionId' });
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   const isFullReading = sku === 'full_reading';
   const isCompatibility = sku === 'compatibility';
+  const isJourney = sku === 'journey';
   const priceId = isFullReading ? process.env.STRIPE_PRICE_FULL_READING
     : isCompatibility ? process.env.STRIPE_PRICE_COMPATIBILITY
+    : isJourney ? process.env.STRIPE_PRICE_JOURNEY
     : process.env.STRIPE_PRICE_ID;
 
   if (!stripeKey || !priceId) {
@@ -77,6 +79,33 @@ export default async function handler(req, res) {
     params.append('metadata[result_id]', resultId);
     params.append('metadata[partner_code]', partnerCode);
     const back = `${baseUrl}/?code=${encodeURIComponent(result.code)}&compare=${encodeURIComponent(partnerCode)}`;
+    params.append('success_url', `${back}&purchase=success`);
+    params.append('cancel_url', back);
+  } else if (isJourney) {
+    // Journey Reading: one ask, one reading. The ask is checked against the
+    // buyer's own result here, before Stripe is involved — holding a link must
+    // never be enough to buy a reading of someone else's landscape.
+    if (!resultId || !/^[0-9a-f-]{36}$/i.test(resultId)) {
+      return res.status(400).json({ error: 'Missing resultId' });
+    }
+    if (!askSlug || !/^[1-9A-HJ-NP-Za-km-z]{10}$/.test(askSlug)) {
+      return res.status(400).json({ error: 'Missing or invalid askSlug' });
+    }
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const { data: result } = await supabase.from('results').select('code').eq('id', resultId).maybeSingle();
+    if (!result) return res.status(404).json({ error: 'Result not found' });
+
+    const { data: ask } = await supabase
+      .from('asks').select('id, owner_result_id').eq('slug', askSlug).maybeSingle();
+    if (!ask || ask.owner_result_id !== resultId) {
+      return res.status(403).json({ error: 'That question is not on this landscape' });
+    }
+
+    params.append('metadata[sku]', 'journey');
+    params.append('metadata[result_id]', resultId);
+    params.append('metadata[ask_slug]', askSlug);
+    const back = `${baseUrl}/?code=${encodeURIComponent(result.code)}`;
     params.append('success_url', `${back}&purchase=success`);
     params.append('cancel_url', back);
   } else {

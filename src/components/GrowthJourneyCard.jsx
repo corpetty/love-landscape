@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ContourView from './ContourView.jsx';
 import PlacementPicker from './PlacementPicker.jsx';
 import ReadingRenderer from './ReadingRenderer.jsx';
+import JourneyReadingCard from './JourneyReadingCard.jsx';
 import { findPath } from '../terrain/pathfinder.js';
 import { buildPathNarrative, narrativeToMarkdown, symmetryLine } from '../data/pathNarrative.js';
 import { encodeView, decodeView } from '../data/encoding.js';
@@ -198,6 +199,9 @@ function JourneyDirection({
   const [draft, setDraft] = useState(null);
   const [codeInput, setCodeInput] = useState('');
   const [error, setError] = useState('');
+  // Lifted out of the link panel: the paid reading is entitled per ask, so the
+  // slug has to be visible to the card below as well as to the panel above.
+  const [askSlug, setAskSlug] = useState(null);
 
   // A new pairing must not inherit the last one's half-finished edit.
   useEffect(() => {
@@ -205,6 +209,7 @@ function JourneyDirection({
     setDraft(null);
     setCodeInput('');
     setError('');
+    setAskSlug(null);
   }, [terrainCode]);
 
   const myCode = mine
@@ -308,6 +313,7 @@ function JourneyDirection({
                   onCopy={onCopy}
                   copied={copied}
                   onAnswerReceived={onAnswerReceived}
+                  onSlug={setAskSlug}
                   answered
                 />
               )}
@@ -327,6 +333,7 @@ function JourneyDirection({
                   onCopy={onCopy}
                   copied={copied}
                   onAnswerReceived={onAnswerReceived}
+                  onSlug={setAskSlug}
                 />
               )}
 
@@ -410,6 +417,16 @@ function JourneyDirection({
           <div style={{ marginTop: '1rem' }}>
             <ReadingRenderer text={narrativeToMarkdown(narrative)} />
           </div>
+
+          {/* The paid reading needs the pins server-side, which only the ask
+              path provides. On the codes-only path there is no slug and the
+              card renders nothing — deliberately, rather than offering a
+              purchase the server could not regenerate. */}
+          <JourneyReadingCard
+            clientResultId={clientResultId}
+            askSlug={askSlug}
+            otherName={partnerName}
+          />
         </div>
       )}
     </div>
@@ -426,7 +443,7 @@ function JourneyDirection({
  * hours or days later, not seconds, so a background poll would spend requests
  * on nothing and put a spinner on a screen where nothing is happening.
  */
-function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerReceived, answered = false }) {
+function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerReceived, onSlug, answered = false }) {
   const [slug, setSlug] = useState(null);
   const [phase, setPhase] = useState('idle'); // idle | creating | ready | checking | closing
   const [error, setError] = useState('');
@@ -445,6 +462,7 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
         const status = await fetchAskStatus(clientResultId);
         if (cancelled || !status?.ask) return;
         setSlug(status.ask.slug);
+        onSlug?.(status.ask.slug);
         setPhase('ready');
         if (status.partner_point) onAnswerReceived?.(status.partner_point);
       } catch { /* an ask that cannot be loaded simply is not offered */ }
@@ -461,6 +479,7 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
         x: point.x, y: point.y, exclusivity: point.exclusivity ?? null,
       });
       setSlug(out.slug);
+      onSlug?.(out.slug);
       setPhase('ready');
       record('ask_create');
     } catch (e) {
@@ -488,6 +507,7 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
     try {
       await withdrawAsk(clientResultId);
       setSlug(null);
+      onSlug?.(null);
       setPhase('idle');
     } catch (e) {
       setError(e.message);
