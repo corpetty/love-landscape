@@ -297,6 +297,7 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
           partnerParams={partnerParams}
           partnerCode={canonicalPartnerCode}
           partnerName={partnerName}
+          clientResultId={ownedEntry?.client_result_id || null}
         />
       )}
 

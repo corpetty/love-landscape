@@ -1,58 +1,122 @@
 {
   "functions": {
-    "api/chat.js": { "maxDuration": 30 },
-    "api/credits.js": { "maxDuration": 10 },
-    "api/checkout.js": { "maxDuration": 10 },
-    "api/webhook.js": { "maxDuration": 10 },
-    "api/og.js": { "maxDuration": 10 },
-    "api/coupon.js": { "maxDuration": 10 },
-    "api/sync.js": { "maxDuration": 10 },
-    "api/results.js": { "maxDuration": 10 },
-    "api/admin.js": { "maxDuration": 10 },
-    "api/share.js": { "maxDuration": 10, "includeFiles": "dist/index.html" },
-    "api/reading.js": { "maxDuration": 300 },
-    "api/delete-account.js": { "maxDuration": 30 },
-    "api/cron-maintenance.js": { "maxDuration": 60 }
+    "api/chat.js": {
+      "maxDuration": 30
+    },
+    "api/credits.js": {
+      "maxDuration": 10
+    },
+    "api/checkout.js": {
+      "maxDuration": 10
+    },
+    "api/webhook.js": {
+      "maxDuration": 10
+    },
+    "api/og.js": {
+      "maxDuration": 10
+    },
+    "api/coupon.js": {
+      "maxDuration": 10
+    },
+    "api/sync.js": {
+      "maxDuration": 10
+    },
+    "api/results.js": {
+      "maxDuration": 10
+    },
+    "api/admin.js": {
+      "maxDuration": 10
+    },
+    "api/share.js": {
+      "maxDuration": 10,
+      "includeFiles": "dist/index.html"
+    },
+    "api/reading.js": {
+      "maxDuration": 300
+    },
+    "api/delete-account.js": {
+      "maxDuration": 30
+    },
+    "api/cron-maintenance.js": {
+      "maxDuration": 60
+    }
   },
   "crons": [
-    { "path": "/api/cron-maintenance", "schedule": "0 6 * * *" }
+    {
+      "path": "/api/cron-maintenance",
+      "schedule": "0 6 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/r/:slug", "destination": "/api/share?slug=:slug" },
-    { "source": "/a/:key", "destination": "/api/share?archetype=:key" },
-    { "source": "/archetypes", "destination": "/?screen=archetypes" }
+    {
+      "source": "/r/:slug",
+      "destination": "/api/share?slug=:slug"
+    },
+    {
+      "source": "/ask/:slug",
+      "destination": "/api/share?ask=:slug"
+    },
+    {
+      "source": "/a/:key",
+      "destination": "/api/share?archetype=:key"
+    },
+    {
+      "source": "/archetypes",
+      "destination": "/?screen=archetypes"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
       ]
     },
     {
       "source": "/assets/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/(.*).svg",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/robots.txt",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/sitemap.xml",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     }
   ]

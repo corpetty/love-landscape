@@ -104,6 +104,36 @@ async function rateLimited(supabase, req, sessionId) {
   return false;
 }
 
+/**
+ * Validate one growth-journey pin from a request body.
+ *
+ * Exported because this is the only place untrusted geometry enters the
+ * system, and it is worth testing without a database in the way. Returns
+ * { error } or a clean row fragment — never a partially-validated object.
+ */
+export function cleanPoint(raw) {
+  if (!raw || typeof raw !== 'object') return { error: 'Missing point' };
+  const { x, y } = raw;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
+    return { error: 'Point must be two numbers between 0 and 1' };
+  }
+  const out = { x, y, exclusivity: null, note: null };
+
+  // Optional by design: an unset wish must stay unset rather than defaulting,
+  // because the reading says nothing at all when it is null.
+  const e = raw.exclusivity;
+  if (e != null) {
+    if (!Number.isFinite(e) || e < 0 || e > 1) return { error: 'Invalid exclusivity' };
+    out.exclusivity = e;
+  }
+
+  if (typeof raw.note === 'string') {
+    const note = raw.note.trim().slice(0, 280);
+    out.note = note.length ? note : null;
+  }
+  return out;
+}
+
 async function insertMilestone(supabase, { kind, personKey, clientResultId = null, meta = {}, isDev, happenedAt }) {
   await supabase.from('milestones').insert({
     kind,
@@ -378,9 +408,292 @@ async function opDelete(req, res, supabase, body) {
   return res.json({ ok: true });
 }
 
+// ── growth journey: the ask link ─────────────────────────────────────────────
+//
+// An ask is one landscape opened to one question. The owner creates it with
+// their own pin already placed; the partner opens /ask/<slug>, answers, and
+// only then sees anything. That ordering is the sealed reveal, and it is
+// enforced here rather than in the UI: ask_get deliberately does not return
+// the owner's pin, so a partner who reads the network response learns nothing
+// they would not learn by answering honestly first.
+
+/** Load an ask by slug together with the landscape it is about. */
+async function loadAsk(supabase, slug) {
+  if (typeof slug !== 'string' || !/^[1-9A-HJ-NP-Za-km-z]{10}$/.test(slug)) return null;
+  const { data } = await supabase
+    .from('asks')
+    .select('id, slug, status, owner_result_id, owner_session_id, is_dev, results(code, user_id, session_id)')
+    .eq('slug', slug)
+    .maybeSingle();
+  return data || null;
+}
+
+/** A pin as its own author may see it: everything, including their words. */
+function placementOut(row) {
+  if (!row) return null;
+  return {
+    x: row.x,
+    y: row.y,
+    exclusivity: row.exclusivity ?? null,
+    note: row.note ?? null,
+  };
+}
+
+/**
+ * A pin as the OTHER person may see it: the place, never the words.
+ *
+ * The owner's note is their private reading of the relationship, written
+ * before the question was sent — it is not part of the answer they asked for.
+ * Built by naming the three fields that may travel rather than by deleting the
+ * one that may not, so a column added to this table later cannot leak by
+ * default, and neither can a widened SELECT.
+ */
+function publicPoint(row) {
+  if (!row) return null;
+  return { x: row.x, y: row.y, exclusivity: row.exclusivity ?? null };
+}
+
+/** Owner opens their landscape to the question, with their own pin placed. */
+async function opAskCreate(req, res, supabase, body, isDev) {
+  const user = await verifyJwt(req, supabase);
+  const auth = await authorizeResult(supabase, body, user);
+  if (auth.error) return res.status(auth.code || 400).json({ error: auth.error });
+  const { row } = auth;
+
+  const point = cleanPoint(body.point);
+  if (point.error) return res.status(400).json({ error: point.error });
+
+  const sessionId = typeof body.session_id === 'string' && UUID_RE.test(body.session_id) ? body.session_id : null;
+  if (sessionId && await rateLimited(supabase, req, sessionId)) {
+    return res.status(429).json({ error: 'Rate limited' });
+  }
+
+  // One open ask per landscape is enough, and reusing it means a link the
+  // owner already sent keeps working instead of quietly going dead.
+  const { data: existing } = await supabase
+    .from('asks')
+    .select('id, slug')
+    .eq('owner_result_id', row.id)
+    .eq('status', 'open')
+    .maybeSingle();
+
+  let ask = existing;
+  if (!ask) {
+    const insertAsk = async (slug) => supabase
+      .from('asks')
+      .insert({
+        slug,
+        owner_result_id: row.id,
+        owner_session_id: row.session_id || sessionId,
+        // Written explicitly rather than left to the column default: the
+        // reuse lookup below filters on status, so the value has to be one
+        // this code put there, not one it hopes the database supplied.
+        status: 'open',
+        is_dev: isDev || row.is_dev,
+      })
+      .select('id, slug')
+      .maybeSingle();
+
+    let { data, error } = await insertAsk(makeSlug());
+    // Slug collision (unique index) — one retry with a fresh slug, same as publish.
+    if (error && error.code === '23505') ({ data, error } = await insertAsk(makeSlug()));
+    if (error || !data) return res.status(503).json({ error: 'Storage error' });
+    ask = data;
+
+    await insertMilestone(supabase, {
+      kind: 'ask',
+      personKey: row.user_id || row.session_id || sessionId,
+      clientResultId: row.client_result_id,
+      isDev: isDev || row.is_dev,
+    });
+  }
+
+  // The owner's pin is stored, never sent to the partner before they answer.
+  const { error: pErr } = await supabase.from('placements').upsert({
+    ask_id: ask.id,
+    author_role: 'owner',
+    kind: 'current',
+    x: point.x,
+    y: point.y,
+    exclusivity: point.exclusivity,
+    note: point.note,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'ask_id,author_role,kind' });
+  if (pErr) return res.status(503).json({ error: 'Storage error' });
+
+  return res.json({ ok: true, slug: ask.slug });
+}
+
+/**
+ * What /ask/<slug> may know before it is answered: the landscape, and nothing
+ * else. Public — anyone with the link can call it, which is the point of a link.
+ */
+async function opAskGet(req, res, supabase, body) {
+  const ask = await loadAsk(supabase, body.slug);
+  if (!ask || ask.status === 'withdrawn') return res.status(410).json({ error: 'This link is no longer active' });
+  const code = ask.results?.code;
+  if (!code || !decodeParams(code)) return res.status(410).json({ error: 'This link is no longer active' });
+  return res.json({ ok: true, code, answered: ask.status === 'answered' });
+}
+
+/**
+ * The partner answers. No account and no assessment required — the point of
+ * the feature is a question someone can answer in one screen.
+ *
+ * The response carries the reveal: the owner's pin, which the caller could
+ * not see a moment ago. That is the payoff for answering, and the reason the
+ * sealed order is worth enforcing.
+ */
+async function opAskAnswer(req, res, supabase, body, isDev) {
+  const ask = await loadAsk(supabase, body.slug);
+  if (!ask || ask.status === 'withdrawn') return res.status(410).json({ error: 'This link is no longer active' });
+
+  const point = cleanPoint(body.point);
+  if (point.error) return res.status(400).json({ error: point.error });
+
+  const { answer_token: answerToken, session_id: sessionId } = body;
+  if (!answerToken || !TOKEN_RE.test(answerToken)) return res.status(400).json({ error: 'Invalid answer_token' });
+  if (!sessionId || !UUID_RE.test(sessionId)) return res.status(400).json({ error: 'Invalid session_id' });
+  if (await rateLimited(supabase, req, sessionId)) return res.status(429).json({ error: 'Rate limited' });
+
+  // An existing answer may only be revised by whoever wrote it. Without this,
+  // a second person with the link could overwrite the first one's answer.
+  const { data: prior } = await supabase
+    .from('placements')
+    .select('id, answer_token_hash')
+    .eq('ask_id', ask.id)
+    .eq('author_role', 'partner')
+    .eq('kind', 'desired')
+    .maybeSingle();
+  if (prior && prior.answer_token_hash !== sha256(answerToken)) {
+    return res.status(409).json({ error: 'This question has already been answered by someone else' });
+  }
+
+  const { error } = await supabase.from('placements').upsert({
+    ask_id: ask.id,
+    author_role: 'partner',
+    kind: 'desired',
+    x: point.x,
+    y: point.y,
+    exclusivity: point.exclusivity,
+    note: point.note,
+    answer_token_hash: sha256(answerToken),
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'ask_id,author_role,kind' });
+  if (error) return res.status(503).json({ error: 'Storage error' });
+
+  if (!prior) {
+    await supabase.from('asks').update({ status: 'answered' }).eq('id', ask.id);
+    await insertMilestone(supabase, {
+      kind: 'ask_answered',
+      personKey: sessionId,
+      isDev: isDev || ask.is_dev,
+    });
+  }
+
+  // The reveal. Note that the owner's note is NOT returned: it is the owner's
+  // private reading of the relationship, written before the question was sent.
+  const { data: ownerPin } = await supabase
+    .from('placements')
+    .select('x, y, exclusivity')
+    .eq('ask_id', ask.id)
+    .eq('author_role', 'owner')
+    .eq('kind', 'current')
+    .maybeSingle();
+
+  return res.json({
+    ok: true,
+    code: ask.results?.code || null,
+    owner_point: publicPoint(ownerPin),
+    revised: Boolean(prior),
+  });
+}
+
+/** The owner checks whether the question came back. */
+async function opAskStatus(req, res, supabase, body) {
+  const user = await verifyJwt(req, supabase);
+  const auth = await authorizeResult(supabase, body, user);
+  if (auth.error) return res.status(auth.code || 400).json({ error: auth.error });
+
+  const { data: asks } = await supabase
+    .from('asks')
+    .select('id, slug, status')
+    .eq('owner_result_id', auth.row.id)
+    .neq('status', 'withdrawn')
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const ask = asks?.[0];
+  if (!ask) return res.json({ ok: true, ask: null });
+
+  const { data: pins } = await supabase
+    .from('placements')
+    .select('author_role, kind, x, y, exclusivity, note')
+    .eq('ask_id', ask.id);
+
+  const owner = (pins || []).find((p) => p.author_role === 'owner' && p.kind === 'current');
+  const partner = (pins || []).find((p) => p.author_role === 'partner' && p.kind === 'desired');
+
+  return res.json({
+    ok: true,
+    ask: { slug: ask.slug, status: ask.status },
+    owner_point: placementOut(owner),
+    partner_point: placementOut(partner),
+  });
+}
+
+/**
+ * Taking it back. Two different regrets, two different callers:
+ *   - the owner closes the ask, and the link 410s for good;
+ *   - the partner deletes their own answer, using the token they were given.
+ * Both are one-way. A link that can be revived is not a link anyone can safely
+ * send, and an answer that can reappear is not one anyone can safely retract.
+ */
+async function opAskWithdraw(req, res, supabase, body) {
+  // Partner path: prove it with the answer token, no account involved.
+  if (body.answer_token) {
+    if (!TOKEN_RE.test(body.answer_token)) return res.status(400).json({ error: 'Invalid answer_token' });
+    const ask = await loadAsk(supabase, body.slug);
+    if (!ask) return res.status(404).json({ error: 'Not found' });
+
+    const { data: prior } = await supabase
+      .from('placements')
+      .select('id, answer_token_hash')
+      .eq('ask_id', ask.id)
+      .eq('author_role', 'partner')
+      .eq('kind', 'desired')
+      .maybeSingle();
+    if (!prior || prior.answer_token_hash !== sha256(body.answer_token)) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await supabase.from('placements').delete().eq('id', prior.id);
+    await supabase.from('asks').update({ status: 'open' }).eq('id', ask.id);
+    return res.json({ ok: true, withdrawn: 'answer' });
+  }
+
+  // Owner path: prove it the way every other owner action is proved.
+  const user = await verifyJwt(req, supabase);
+  const auth = await authorizeResult(supabase, body, user);
+  if (auth.error) return res.status(auth.code || 400).json({ error: auth.error });
+
+  const { error } = await supabase
+    .from('asks')
+    .update({ status: 'withdrawn' })
+    .eq('owner_result_id', auth.row.id)
+    .neq('status', 'withdrawn');
+  if (error) return res.status(503).json({ error: 'Storage error' });
+  return res.json({ ok: true, withdrawn: 'ask' });
+}
+
 // ── router ───────────────────────────────────────────────────────────────────
 
-const OPS = { create: opCreate, update: opUpdate, claim: opClaim, compare: opCompare, signup: opSignup, list: opList, delete: opDelete };
+const OPS = {
+  create: opCreate, update: opUpdate, claim: opClaim, compare: opCompare,
+  signup: opSignup, list: opList, delete: opDelete,
+  ask_create: opAskCreate, ask_get: opAskGet, ask_answer: opAskAnswer,
+  ask_status: opAskStatus, ask_withdraw: opAskWithdraw,
+};
 
 export default async function handler(req, res) {
   const origin = process.env.PUBLIC_ORIGIN || process.env.VITE_PUBLIC_URL || '*';

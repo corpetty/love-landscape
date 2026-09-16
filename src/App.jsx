@@ -11,6 +11,7 @@ import SettingsPanel from './components/SettingsPanel.jsx';
 import RefiningScreen from './components/RefiningScreen.jsx';
 import MyLandscapes from './components/MyLandscapes.jsx';
 import SharedView from './components/SharedView.jsx';
+import AskScreen from './components/AskScreen.jsx';
 import ArchetypesGallery from './components/ArchetypesGallery.jsx';
 import ScienceReading from './components/ScienceReading.jsx';
 import Footer from './components/Footer.jsx';
@@ -35,6 +36,7 @@ const TITLES = {
   about: 'About — Love Landscape',
   landscapes: 'My Landscapes — Love Landscape',
   sharedView: 'A Shared Landscape — Love Landscape',
+  ask: 'A question about where this is going — Love Landscape',
   account: 'Account — Love Landscape',
 };
 
@@ -57,6 +59,32 @@ function consumeShareBootstrap() {
         url.searchParams.delete('shared');
         window.history.replaceState({}, '', url.toString());
         return { slug: 'dev-sim', code: sim };
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+/**
+ * /ask/<slug> injects window.__ASK__ — the growth-journey question.
+ * In dev (no api runtime) ?ask=<slug>&askcode=<code> simulates one.
+ */
+function consumeAskBootstrap() {
+  try {
+    const ask = window.__ASK__;
+    if (ask) {
+      delete window.__ASK__;
+      return ask;
+    }
+    if (import.meta.env.DEV) {
+      const url = new URL(window.location.href);
+      const slug = url.searchParams.get('ask');
+      const code = url.searchParams.get('askcode');
+      if (slug && code) {
+        url.searchParams.delete('ask');
+        url.searchParams.delete('askcode');
+        window.history.replaceState({}, '', url.toString());
+        return { slug, code, answered: false };
       }
     }
   } catch { /* ignore */ }
@@ -113,6 +141,7 @@ export default function App() {
   const [refineError, setRefineError] = useState(null);
   const [sharedData, setSharedData] = useState(null); // { slug, code, params } from /r/<slug>
   const [archetypeFocus, setArchetypeFocus] = useState(null); // archetype key from /a/<key>
+  const [askData, setAskData] = useState(null); // { slug, code, answered } from /ask/<slug>
   const [scienceFocus, setScienceFocus] = useState(null); // dimension index for the science view
   const [scienceReturn, setScienceReturn] = useState('results'); // screen to return to from science view
   // Set at assessment completion, consumed once when the final result renders:
@@ -129,6 +158,16 @@ export default function App() {
         setScreen('sharedView');
         return;
       }
+    }
+
+    // /ask/<slug> — a question about one bond, answerable without an account.
+    // Checked before ?code= so an ask link opens the question even on a device
+    // that already has a landscape saved.
+    const ask = consumeAskBootstrap();
+    if (ask && decodeParams(ask.code)) {
+      setAskData(ask);
+      setScreen('ask');
+      return;
     }
 
     // /a/<key> share pages inject the archetype key; open the gallery focused on it.
@@ -418,6 +457,16 @@ export default function App() {
           onSignIn={() => setShowAuth(true)}
           onMyLandscapes={goLandscapes}
           onOpenSettings={() => setShowSettings(true)}
+        />
+      );
+      break;
+    case 'ask':
+      content = (
+        <AskScreen
+          slug={askData?.slug}
+          code={askData?.code}
+          alreadyAnswered={askData?.answered}
+          onTakeAssessment={handleBegin}
         />
       );
       break;

@@ -8,6 +8,7 @@ import { encodeView, decodeView } from '../data/encoding.js';
 import { getJourney, saveJourney } from '../data/journeys.js';
 import { DISCLAIMER } from '../data/recommendations.js';
 import { record } from '../data/journey.js';
+import { createAsk, fetchAskStatus, withdrawAsk, askUrl } from '../data/asksClient.js';
 
 /**
  * The Growth Journey — where a bond stands on someone's landscape, where it
@@ -30,7 +31,7 @@ import { record } from '../data/journey.js';
  *    carries its landscape precisely so a point can be refused rather than
  *    silently drawn on the wrong map, where it would mean something else.
  */
-export default function GrowthJourneyCard({ params, code, partnerParams, partnerCode, partnerName }) {
+export default function GrowthJourneyCard({ params, code, partnerParams, partnerCode, partnerName, clientResultId }) {
   const [state, setState] = useState(() => getJourney(code, partnerCode) || {});
   const [copied, setCopied] = useState('');
 
@@ -97,6 +98,10 @@ export default function GrowthJourneyCard({ params, code, partnerParams, partner
         onCopy={copy}
         copied={copied}
         copyKey="a"
+        /* Only your own landscape can be opened to a question, and only a
+           result this device owns can prove it. */
+        clientResultId={clientResultId}
+        onAnswerReceived={(point) => put({ theirDesire: point })}
       />
 
       {partnerParams && (
@@ -175,6 +180,7 @@ const PIN_LABEL = { placement: 'Now', desire: 'Wanted' };
 function JourneyDirection({
   heading, terrain, terrainCode, myKind, mine, setMine, theirs, setTheirs,
   path, perspective, partnerName, onCopy, copied, copyKey, style,
+  clientResultId = null, onAnswerReceived = null,
 }) {
   // Two forms of the other person are needed and are not interchangeable:
   // "them" reads as an object ("ask them"), "they" as a subject ("do they
@@ -288,6 +294,23 @@ function JourneyDirection({
                 {role.askBody} You will not see their answer until your own is saved — which it is.
               </p>
 
+              {clientResultId && (
+                <AskLinkPanel
+                  clientResultId={clientResultId}
+                  point={mine}
+                  other={other}
+                  onCopy={onCopy}
+                  copied={copied}
+                  onAnswerReceived={onAnswerReceived}
+                />
+              )}
+
+              {clientResultId && (
+                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: '0.9rem 0 0.5rem' }}>
+                  Or pass codes by hand, if you would rather not send a link:
+                </p>
+              )}
+
               {myCode && (
                 <>
                   <code style={{
@@ -364,6 +387,134 @@ function JourneyDirection({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+/**
+ * The ask link: the same exchange as the codes below it, with the copying
+ * removed. The owner's pin is sent with the link so the question is complete
+ * the moment it is created — the recipient never waits on a second step.
+ *
+ * Checking for an answer is a button rather than a poll. An ask is answered
+ * hours or days later, not seconds, so a background poll would spend requests
+ * on nothing and put a spinner on a screen where nothing is happening.
+ */
+function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerReceived }) {
+  const [slug, setSlug] = useState(null);
+  const [phase, setPhase] = useState('idle'); // idle | creating | ready | checking | closing
+  const [error, setError] = useState('');
+  const [checked, setChecked] = useState(false);
+
+  // An ask that already exists for this landscape is reused, so a link the
+  // owner sent earlier keeps working across reloads and devices.
+  useEffect(() => {
+    let cancelled = false;
+    setSlug(null);
+    setError('');
+    setChecked(false);
+    setPhase('idle');
+    (async () => {
+      try {
+        const status = await fetchAskStatus(clientResultId);
+        if (cancelled || !status?.ask) return;
+        setSlug(status.ask.slug);
+        setPhase('ready');
+        if (status.partner_point) onAnswerReceived?.(status.partner_point);
+      } catch { /* an ask that cannot be loaded simply is not offered */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientResultId]);
+
+  async function create() {
+    setPhase('creating');
+    setError('');
+    try {
+      const out = await createAsk(clientResultId, {
+        x: point.x, y: point.y, exclusivity: point.exclusivity ?? null,
+      });
+      setSlug(out.slug);
+      setPhase('ready');
+      record('ask_create');
+    } catch (e) {
+      setError(e.message);
+      setPhase('idle');
+    }
+  }
+
+  async function check() {
+    setPhase('checking');
+    setError('');
+    try {
+      const status = await fetchAskStatus(clientResultId);
+      setChecked(true);
+      if (status?.partner_point) onAnswerReceived?.(status.partner_point);
+    } catch (e) {
+      setError(e.message);
+    }
+    setPhase('ready');
+  }
+
+  async function close() {
+    setPhase('closing');
+    setError('');
+    try {
+      await withdrawAsk(clientResultId);
+      setSlug(null);
+      setPhase('idle');
+    } catch (e) {
+      setError(e.message);
+      setPhase('ready');
+    }
+  }
+
+  if (!slug) {
+    return (
+      <div>
+        <button className="btn-primary" onClick={create} disabled={phase === 'creating'}>
+          {phase === 'creating' ? 'Creating the link…' : `Send ${other} a link`}
+        </button>
+        <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.4rem', lineHeight: 1.55 }}>
+          They answer in one screen — no account, no assessment. Your own pin is not shown to them
+          until they have given their answer.
+        </p>
+        {error && <p role="alert" style={{ color: '#f97066', fontSize: '0.84rem', marginTop: '0.35rem' }}>{error}</p>}
+      </div>
+    );
+  }
+
+  const url = askUrl(slug);
+  return (
+    <div>
+      <code style={{
+        display: 'block', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
+        padding: '0.5rem 0.7rem', borderRadius: '6px', background: 'var(--color-bg)',
+        border: '1px solid var(--color-border)', wordBreak: 'break-all', marginBottom: '0.5rem',
+      }}>
+        {url}
+      </code>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <button className="btn-primary" onClick={() => onCopy(url, 'asklink')} style={{ fontSize: '0.82rem' }}>
+          {copied === 'asklink' ? 'Link copied ✓' : 'Copy the link'}
+        </button>
+        <button className="btn-secondary" onClick={check} disabled={phase === 'checking'} style={{ fontSize: '0.82rem' }}>
+          {phase === 'checking' ? 'Checking…' : 'Check for an answer'}
+        </button>
+        <button className="btn-secondary" onClick={close} disabled={phase === 'closing'} style={{ fontSize: '0.82rem' }}>
+          {phase === 'closing' ? 'Closing…' : 'Close this question'}
+        </button>
+      </div>
+      {checked && (
+        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.45rem' }}>
+          No answer yet. They can take their time — the link keeps working until you close it.
+        </p>
+      )}
+      <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.45rem', lineHeight: 1.55 }}>
+        Closing it is permanent: the link stops working for good, and any answer on it is dropped.
+      </p>
+      {error && <p role="alert" style={{ color: '#f97066', fontSize: '0.84rem', marginTop: '0.35rem' }}>{error}</p>}
     </div>
   );
 }
