@@ -35,6 +35,13 @@ export default function AskScreen({ slug, code, alreadyAnswered, onTakeAssessmen
     record('ask_open', { revisit: hasAnswered(slug) || undefined });
   }, [slug]);
 
+  // Counted once when the reveal appears, not on every render: a funnel step
+  // recorded from a render body counts re-renders, not journeys.
+  const [revealedStory, setRevealedStory] = useState(null);
+  useEffect(() => {
+    if (revealedStory) record('path_view', { story: revealedStory, role: 'partner' });
+  }, [revealedStory]);
+
   if (!params) {
     return (
       <div style={{ paddingTop: '3rem', textAlign: 'center' }}>
@@ -55,6 +62,7 @@ export default function AskScreen({ slug, code, alreadyAnswered, onTakeAssessmen
         note: point.note || null,
       });
       record('ask_answer', { revised: out.revised || undefined });
+      record('placement_set', { kind: 'desire', role: 'partner' });
       setReveal(out);
       setPhase('revealed');
       setRevising(false);
@@ -100,6 +108,12 @@ export default function AskScreen({ slug, code, alreadyAnswered, onTakeAssessmen
     otherName: null,
     note: point.note || null,
   });
+
+  useEffect(() => {
+    if (phase === 'revealed' && path && revealedStory !== path.storyType) {
+      setRevealedStory(path.storyType);
+    }
+  }, [phase, path, revealedStory]);
 
   if (phase === 'revealed' && path) {
     return (

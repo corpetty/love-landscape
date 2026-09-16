@@ -215,7 +215,7 @@ function JourneyDirection({
     setMine(draft);
     setEditing(false);
     setDraft(null);
-    record('content_page_view', { page: `journey-${myKind}` });
+    record('placement_set', { kind: myKind, role: perspective });
   }
 
   function loadTheirs() {
@@ -245,6 +245,15 @@ function JourneyDirection({
     otherName: partnerName || null,
     note: (myKind === 'desire' ? mine?.note : null) || null,
   });
+
+  // A completed journey is the thing this whole feature exists to produce, so
+  // it gets its own funnel step rather than hiding inside a page-view count.
+  // Keyed on the story type: a re-render must not count as a second journey.
+  const storyType = path?.storyType || null;
+  useEffect(() => {
+    if (storyType) record('path_view', { story: storyType, role: perspective });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyType, terrainCode]);
 
   return (
     <div style={style}>
