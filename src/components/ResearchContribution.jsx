@@ -84,7 +84,10 @@ export default function ResearchContribution({ params, aiReading }) {
     const result = await submitLandscape(params, demographics);
 
     if (result.error) {
-      setError('Something went wrong. Your data was not submitted.');
+      // Print the whole thing: a person who reports this can now say what it
+      // said, and anyone who opens the console sees the cause immediately.
+      console.error('Research contribution failed:', result);
+      setError({ message: result.error, code: result.code, hint: result.hint });
       setSubmitting(false);
     } else {
       try { localStorage.setItem(STORAGE_KEY, 'true'); } catch { /* ignore */ }
@@ -217,9 +220,19 @@ export default function ResearchContribution({ params, aiReading }) {
             )}
 
             {error && (
-              <p role="alert" style={{ color: '#f97066', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-                {error}
-              </p>
+              <div role="alert" style={{ marginBottom: '0.75rem' }}>
+                <p style={{ color: '#f97066', fontSize: '0.85rem' }}>
+                  Something went wrong. Your data was not submitted.
+                </p>
+                {/* The reason, in the database's own words. Ugly, and worth it:
+                    a person who reports this can say what it actually said, and
+                    the failure stops being indistinguishable from apathy. */}
+                <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.3rem', lineHeight: 1.55 }}>
+                  {error.message}
+                  {error.code ? ` (${error.code})` : ''}
+                  {error.hint ? ` — ${error.hint}` : ''}
+                </p>
+              </div>
             )}
 
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
