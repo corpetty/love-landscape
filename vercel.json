@@ -19,6 +19,7 @@
   ],
   "rewrites": [
     { "source": "/r/:slug", "destination": "/api/share?slug=:slug" },
+    { "source": "/ask/:slug", "destination": "/api/share?ask=:slug" },
     { "source": "/a/:key", "destination": "/api/share?archetype=:key" },
     { "source": "/archetypes", "destination": "/?screen=archetypes" }
   ],

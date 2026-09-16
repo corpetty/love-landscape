@@ -13,10 +13,18 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const ALLOWED_NAMES = new Set([
+/**
+ * Must stay in step with the events_name CHECK in supabase/migrations — a name
+ * the database accepts but this set omits is dropped silently, which looks
+ * exactly like a funnel step nobody uses. Exported so a test can assert the two
+ * lists agree rather than leaving it to memory.
+ */
+export const ALLOWED_NAMES = new Set([
   'assessment_start', 'assessment_complete', 'results_view', 'share_page_view',
   'share_page_cta', 'partner_code_load', 'signup_start', 'otp_sent', 'otp_verified',
   'reading_view', 'content_page_view', 'checkout_start',
+  // Growth journey (migration 009)
+  'ask_create', 'ask_open', 'ask_answer', 'placement_set', 'path_view',
 ]);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

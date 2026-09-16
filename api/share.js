@@ -1,7 +1,9 @@
 /**
- * api/share.js — public share pages (spec AD-1).
+ * api/share.js — public share pages (spec AD-1) and growth-journey ask links.
  *
- * GET /r/<slug>  (rewritten to /api/share?slug=<slug>)
+ * GET /r/<slug>    (rewritten to /api/share?slug=<slug>)
+ * GET /a/<key>     (rewritten to /api/share?archetype=<key>)
+ * GET /ask/<slug>  (rewritten to /api/share?ask=<slug>)
  *
  * Serves the built SPA shell with the share page's OG/Twitter tags swapped in
  * (crawlers read those) and window.__SHARE__ injected (the SPA reads that and
@@ -21,6 +23,13 @@ import { decodeParams } from '../src/data/encoding.js';
 import { computeArchetype, ARCHETYPES } from '../src/data/archetypes.js';
 
 const SLUG_RE = /^[1-9A-HJ-NP-Za-km-z]{10}$/; // base58, 10 chars
+
+function getServiceClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 let cachedShell = null;
 export function loadShell() {
@@ -109,6 +118,51 @@ export function buildArchetypePage(shell, { arch, origin }) {
   return html;
 }
 
+/**
+ * The growth-journey ask page for /ask/<slug>.
+ *
+ * This is NOT a share page, and the difference is the whole design. A share
+ * page wants to travel: it leads with the archetype and renders the terrain
+ * into the link preview. An ask link is a private question sent to one person,
+ * so it does the opposite — noindex, the site's generic image rather than the
+ * sender's terrain, and a title that says nothing about whose landscape it is
+ * or what shape it has. A link preview in a group chat must not reveal what
+ * the recipient has not yet opened.
+ */
+export function buildAskPage(shell, { slug, code, answered, origin }) {
+  const title = 'A question about where this is going — Love Landscape';
+  const description = 'Someone opened their relational landscape and asked one question: where do you want this to be?';
+  const pageUrl = `${origin}/ask/${slug}`;
+  const imageUrl = `${origin}/api/og`;
+
+  let html = shell;
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`);
+  html = setMeta(html, 'name', 'description', description);
+  html = setMeta(html, 'name', 'robots', 'noindex, nofollow');
+  html = setMeta(html, 'property', 'og:title', title);
+  html = setMeta(html, 'property', 'og:description', description);
+  html = setMeta(html, 'property', 'og:url', pageUrl);
+  html = setMeta(html, 'property', 'og:image', imageUrl);
+  html = setMeta(html, 'name', 'twitter:title', title);
+  html = setMeta(html, 'name', 'twitter:description', description);
+  html = setMeta(html, 'name', 'twitter:image', imageUrl);
+  html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/, `$1${esc(pageUrl)}$2`);
+  const bootstrap = `<script>window.__ASK__=${JSON.stringify({ slug, code, answered: Boolean(answered) })};</script>`;
+  html = html.replace('</head>', `  ${bootstrap}\n</head>`);
+  return html;
+}
+
+export function askGoneBody(origin) {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>This question is closed — Love Landscape</title><meta name="robots" content="noindex, nofollow" /></head>
+<body style="font-family:Georgia,serif;text-align:center;padding-top:4rem;color:#2a2a28">
+<h1 style="font-weight:400">This question is closed</h1>
+<p>The person who sent it has taken it back. Nothing was recorded.</p>
+<p><a href="${esc(origin)}/" style="color:#7F77DD">Map your own landscape &rarr;</a></p>
+</body></html>`;
+}
+
 export function goneBody(origin) {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -147,6 +201,42 @@ export default async function handler(req, res) {
     return res.status(200).send(buildArchetypePage(shell, { arch, origin }));
   }
 
+  // /ask/<slug> — the growth-journey question. Served here for the same
+  // one-function reason as /a/<key>.
+  const askSlug = req.query?.ask;
+  if (askSlug !== undefined) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    // Never cached at the edge: an ask's status changes when it is answered or
+    // withdrawn, and a stale page would keep taking answers to a closed question.
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+
+    const supabaseAsk = getServiceClient();
+    if (!supabaseAsk) return res.status(503).send('Service not configured');
+    if (!SLUG_RE.test(String(askSlug))) return res.status(410).send(askGoneBody(origin));
+
+    const { data: ask, error: askError } = await supabaseAsk
+      .from('asks')
+      .select('slug, status, results(code)')
+      .eq('slug', askSlug)
+      .maybeSingle();
+    if (askError) return res.status(503).send('Temporarily unavailable');
+
+    const askCode = ask?.results?.code;
+    if (!ask || ask.status === 'withdrawn' || !askCode || !decodeParams(askCode)) {
+      return res.status(410).send(askGoneBody(origin));
+    }
+
+    const shellForAsk = loadShell();
+    if (!shellForAsk) {
+      console.error('share: SPA shell not found — check includeFiles in vercel.json');
+      return res.status(500).send('Page unavailable');
+    }
+    return res.status(200).send(buildAskPage(shellForAsk, {
+      slug: ask.slug, code: askCode, answered: ask.status === 'answered', origin,
+    }));
+  }
+
   const slug = req.query?.slug;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
@@ -158,10 +248,8 @@ export default async function handler(req, res) {
 
   if (!slug || !SLUG_RE.test(slug)) return gone();
 
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return res.status(503).send('Service not configured');
-  const supabase = createClient(url, key);
+  const supabase = getServiceClient();
+  if (!supabase) return res.status(503).send('Service not configured');
 
   const { data: row, error } = await supabase
     .from('results')

@@ -116,9 +116,10 @@ export default async function handler(req, res) {
   const session = event.data.object;
   const { session_id: sessionId, credits, sku, result_id: resultId } = session.metadata || {};
 
-  // One-time reading purchases (Full Reading F0.4, and the Compatibility Report).
-  // Generation happens on first api/reading.js request, not here.
-  if (sku === 'full_reading' || sku === 'compatibility') {
+  // One-time reading purchases (Full Reading F0.4, the Compatibility Report,
+  // and the Journey Reading). Generation happens on the first api/reading.js
+  // request, not here.
+  if (sku === 'full_reading' || sku === 'compatibility' || sku === 'journey') {
     if (!resultId) return res.status(200).json({ received: true, warning: 'Missing result_id' });
 
     const row = {
@@ -133,6 +134,14 @@ export default async function handler(req, res) {
     // partner_code lands with migration 006 and is only relevant to compatibility;
     // adding it only for that sku keeps full_reading inserts unchanged pre-migration.
     if (sku === 'compatibility') row.partner_code = session.metadata?.partner_code || null;
+    // ask_id lands with migration 010. The checkout carries the slug (that is
+    // what the client knows); the id is resolved here so the purchase points at
+    // the ask even if the slug were ever reissued.
+    if (sku === 'journey' && session.metadata?.ask_slug) {
+      const { data: ask } = await supabase
+        .from('asks').select('id').eq('slug', session.metadata.ask_slug).maybeSingle();
+      row.ask_id = ask?.id || null;
+    }
     const upsertOpts = { onConflict: 'stripe_session_id', ignoreDuplicates: true };
 
     let { data: inserted, error: upsertError } = await supabase
@@ -141,9 +150,9 @@ export default async function handler(req, res) {
     // Graceful degradation: if migration 005 (payment_intent column) isn't
     // applied yet, record the entitlement anyway — refund mapping can be
     // backfilled, a paying customer's access cannot wait on a migration.
-    if (upsertError && /(payment_intent|partner_code)/.test(upsertError.message || '')) {
-      console.warn('purchases optional column missing (run migration 005/006); recording without it');
-      const { payment_intent, partner_code, ...withoutOptional } = row;
+    if (upsertError && /(payment_intent|partner_code|ask_id)/.test(upsertError.message || '')) {
+      console.warn('purchases optional column missing (run migration 005/007/010); recording without it');
+      const { payment_intent, partner_code, ask_id, ...withoutOptional } = row;
       ({ data: inserted, error: upsertError } = await supabase
         .from('purchases').upsert(withoutOptional, upsertOpts).select('id').maybeSingle());
     }

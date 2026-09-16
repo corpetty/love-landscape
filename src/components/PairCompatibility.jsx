@@ -8,7 +8,7 @@ import { getComparisonName, setComparisonName } from '../data/comparisons.js';
  * pairing + a free, instant alignment snapshot. This is the hook that frames the
  * (paid) deep compatibility report and the free Conversation Map below it.
  */
-export default function PairCompatibility({ params, partnerParams, code, partnerCode }) {
+export default function PairCompatibility({ params, partnerParams, code, partnerCode, onNameChange }) {
   const [copied, setCopied] = useState(false);
   const [name, setName] = useState(() => (partnerCode ? getComparisonName(partnerCode) : null));
   const [editing, setEditing] = useState(false);
@@ -17,9 +17,14 @@ export default function PairCompatibility({ params, partnerParams, code, partner
   // Re-sync when the comparison changes: without this the name state (a
   // useState initializer that runs once) would stick from the previous pairing.
   useEffect(() => {
-    setName(partnerCode ? getComparisonName(partnerCode) : null);
+    const current = partnerCode ? getComparisonName(partnerCode) : null;
+    setName(current);
     setEditing(false);
     setCopied(false);
+    // The name is stored on this device, not in React state, so anything else
+    // that wants to address the partner by name has to be told when it changes.
+    onNameChange?.(current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerCode]);
   const a = computeArchetype(params)?.archetype;
   const b = computeArchetype(partnerParams)?.archetype;
@@ -31,6 +36,7 @@ export default function PairCompatibility({ params, partnerParams, code, partner
     setComparisonName(partnerCode, v);
     setName(v || null);
     setEditing(false);
+    onNameChange?.(v || null);
   }
 
   function shareComparison() {

@@ -94,6 +94,36 @@ export function saveReading({ code, kind = 'solo', partnerCode = null, text }) {
   write(READINGS_KEY, store);
 }
 
+/**
+ * Take a landscape that lives only on the server into this device's store.
+ *
+ * A result created on one device and claimed by an account is listed on every
+ * other device (My Landscapes merges the account's rows in), but nothing here
+ * knew about it — so every feature that asks "does this device own the result
+ * on screen" said no: the share page, the Full Reading, and the growth-journey
+ * question link all disappeared on a landscape the person plainly owns.
+ *
+ * No owner_token is stored, and none is needed: the account's JWT is the proof
+ * for a claimed result, and minting a bearer token for a row that already has
+ * a stronger owner would only widen what can be replayed.
+ */
+export function adoptOwned({ client_result_id, result_id, code, label = null, is_public = false, slug = null }) {
+  if (!client_result_id || !result_id || !code) return null;
+  const existing = getOwnedResult(client_result_id);
+  if (existing?.result_id) return existing;
+  upsertOwned({
+    client_result_id,
+    result_id,
+    code,
+    label,
+    claimed: true,
+    is_public: Boolean(is_public),
+    slug: slug || null,
+    created_at: Date.now(),
+  });
+  return getOwnedResult(client_result_id);
+}
+
 export function removeOwned(clientResultId) {
   write(STORE_KEY, read(STORE_KEY).filter((r) => r.client_result_id !== clientResultId));
   dequeue(clientResultId);
