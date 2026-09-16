@@ -285,12 +285,15 @@ export default function ResultsScreen({ params, baseParams, code, contextAnswers
       {/* Recommendations */}
       <RecommendationCards recommendations={recommendations} />
 
-      {/* Growth Journey — where one particular bond stands on each landscape,
-          where it wants to be, and the route between. Needs a loaded partner:
-          a journey is between two landscapes, and the partner's code is the
-          only identity a pin can be filed under, so without it a placement
-          could not be told apart from one made about somebody else. */}
-      {partnerParams && (
+      {/* Growth Journey — where one particular bond stands on a landscape,
+          where it wants to be, and the route between.
+          Shown when there is something a journey can be filed under: a loaded
+          partner landscape (the codes-only path), or a landscape this device
+          owns (the ask path, where the question itself is the identity and the
+          person answering may have no landscape at all). The second case is
+          the whole point of the ask link, so gating on a partner code would
+          hide the journey from exactly the people who used it. */}
+      {(partnerParams || ownedEntry) && (
         <GrowthJourneyCard
           params={params}
           code={code}

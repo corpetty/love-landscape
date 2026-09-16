@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ContourView from './ContourView.jsx';
 import PlacementPicker from './PlacementPicker.jsx';
 import ReadingRenderer from './ReadingRenderer.jsx';
@@ -35,6 +35,7 @@ import { createAsk, fetchAskStatus, withdrawAsk, askUrl } from '../data/asksClie
 export default function GrowthJourneyCard({ params, code, partnerParams, partnerCode, partnerName, clientResultId }) {
   const [state, setState] = useState(() => getJourney(code, partnerCode) || {});
   const [copied, setCopied] = useState('');
+  const [askSlug, setAskSlug] = useState(null);
 
   // Reload whenever the pairing changes: without this the previous
   // comparison's pins would linger on a landscape they do not belong to.
@@ -42,6 +43,38 @@ export default function GrowthJourneyCard({ params, code, partnerParams, partner
     setState(getJourney(code, partnerCode) || {});
     setCopied('');
   }, [code, partnerCode]);
+
+  /**
+   * Rehydrate from the server's copy of the ask.
+   *
+   * The ask is the durable record: its pins outlive this device's localStorage,
+   * and they are the only copy after a return from checkout, a new browser, or
+   * a cleared cache. Fetching here rather than inside the link panel matters,
+   * because the panel only renders once a placement exists — so a device with
+   * no local pins could never have learned about the pins the server already
+   * held, and would have asked the owner to place the same bond again.
+   */
+  const syncAsk = useCallback(async () => {
+    if (!clientResultId) return;
+    try {
+      const status = await fetchAskStatus(clientResultId);
+      if (!status?.ask) { setAskSlug(null); return null; }
+      setAskSlug(status.ask.slug);
+      setState((prev) => {
+        const next = { ...prev };
+        if (status.owner_point && !prev.placement) next.placement = status.owner_point;
+        if (status.partner_point) next.theirDesire = status.partner_point;
+        if (next.placement !== prev.placement || next.theirDesire !== prev.theirDesire) {
+          saveJourney(code, partnerCode, next);
+        }
+        return next;
+      });
+      return status;
+    } catch { return null; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientResultId, code, partnerCode]);
+
+  useEffect(() => { syncAsk(); }, [syncAsk]);
 
   function put(patch) {
     setState((prev) => {
@@ -102,7 +135,9 @@ export default function GrowthJourneyCard({ params, code, partnerParams, partner
         /* Only your own landscape can be opened to a question, and only a
            result this device owns can prove it. */
         clientResultId={clientResultId}
-        onAnswerReceived={(point) => put({ theirDesire: point })}
+        askSlug={askSlug}
+        onSyncAsk={syncAsk}
+        onAskSlug={setAskSlug}
       />
 
       {partnerParams && (
@@ -181,7 +216,7 @@ const PIN_LABEL = { placement: 'Now', desire: 'Wanted' };
 function JourneyDirection({
   heading, terrain, terrainCode, myKind, mine, setMine, theirs, setTheirs,
   path, perspective, partnerName, onCopy, copied, copyKey, style,
-  clientResultId = null, onAnswerReceived = null,
+  clientResultId = null, askSlug = null, onSyncAsk = null, onAskSlug = null,
 }) {
   // Two forms of the other person are needed and are not interchangeable:
   // "them" reads as an object ("ask them"), "they" as a subject ("do they
@@ -199,9 +234,6 @@ function JourneyDirection({
   const [draft, setDraft] = useState(null);
   const [codeInput, setCodeInput] = useState('');
   const [error, setError] = useState('');
-  // Lifted out of the link panel: the paid reading is entitled per ask, so the
-  // slug has to be visible to the card below as well as to the panel above.
-  const [askSlug, setAskSlug] = useState(null);
 
   // A new pairing must not inherit the last one's half-finished edit.
   useEffect(() => {
@@ -209,7 +241,6 @@ function JourneyDirection({
     setDraft(null);
     setCodeInput('');
     setError('');
-    setAskSlug(null);
   }, [terrainCode]);
 
   const myCode = mine
@@ -245,10 +276,15 @@ function JourneyDirection({
     setCodeInput('');
   }
 
+  // The note belongs to whoever is MOVING — the person who said where they
+  // want the bond to be — not to whoever happens to be reading. In direction A
+  // that is the other person, and theirs is the note the owner most needs to
+  // see; keying it to `mine` dropped it exactly where it mattered most.
+  const moverNote = (myKind === 'desire' ? mine?.note : theirs?.note) || null;
   const narrative = path && buildPathNarrative(path, {
     perspective,
     otherName: partnerName || null,
-    note: (myKind === 'desire' ? mine?.note : null) || null,
+    note: moverNote,
   });
 
   // A completed journey is the thing this whole feature exists to produce, so
@@ -312,8 +348,9 @@ function JourneyDirection({
                   other={other}
                   onCopy={onCopy}
                   copied={copied}
-                  onAnswerReceived={onAnswerReceived}
-                  onSlug={setAskSlug}
+                  askSlug={askSlug}
+                  onSyncAsk={onSyncAsk}
+                  onAskSlug={onAskSlug}
                   answered
                 />
               )}
@@ -332,8 +369,9 @@ function JourneyDirection({
                   other={other}
                   onCopy={onCopy}
                   copied={copied}
-                  onAnswerReceived={onAnswerReceived}
-                  onSlug={setAskSlug}
+                  askSlug={askSlug}
+                  onSyncAsk={onSyncAsk}
+                  onAskSlug={onAskSlug}
                 />
               )}
 
@@ -443,33 +481,10 @@ function JourneyDirection({
  * hours or days later, not seconds, so a background poll would spend requests
  * on nothing and put a spinner on a screen where nothing is happening.
  */
-function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerReceived, onSlug, answered = false }) {
-  const [slug, setSlug] = useState(null);
-  const [phase, setPhase] = useState('idle'); // idle | creating | ready | checking | closing
+function AskLinkPanel({ clientResultId, point, other, onCopy, copied, askSlug, onSyncAsk, onAskSlug, answered = false }) {
+  const [phase, setPhase] = useState('idle'); // idle | creating | checking | closing
   const [error, setError] = useState('');
   const [checked, setChecked] = useState(false);
-
-  // An ask that already exists for this landscape is reused, so a link the
-  // owner sent earlier keeps working across reloads and devices.
-  useEffect(() => {
-    let cancelled = false;
-    setSlug(null);
-    setError('');
-    setChecked(false);
-    setPhase('idle');
-    (async () => {
-      try {
-        const status = await fetchAskStatus(clientResultId);
-        if (cancelled || !status?.ask) return;
-        setSlug(status.ask.slug);
-        onSlug?.(status.ask.slug);
-        setPhase('ready');
-        if (status.partner_point) onAnswerReceived?.(status.partner_point);
-      } catch { /* an ask that cannot be loaded simply is not offered */ }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientResultId]);
 
   async function create() {
     setPhase('creating');
@@ -478,9 +493,8 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
       const out = await createAsk(clientResultId, {
         x: point.x, y: point.y, exclusivity: point.exclusivity ?? null,
       });
-      setSlug(out.slug);
-      onSlug?.(out.slug);
-      setPhase('ready');
+      onAskSlug?.(out.slug);
+      setPhase('idle');
       record('ask_create');
     } catch (e) {
       setError(e.message);
@@ -488,17 +502,19 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
     }
   }
 
+  // A button rather than a poll: an ask comes back hours or days later, so a
+  // background poll would spend requests on nothing and put a spinner on a
+  // screen where nothing is happening.
   async function check() {
     setPhase('checking');
     setError('');
     try {
-      const status = await fetchAskStatus(clientResultId);
-      setChecked(true);
-      if (status?.partner_point) onAnswerReceived?.(status.partner_point);
+      const status = await onSyncAsk?.();
+      setChecked(!status?.partner_point);
     } catch (e) {
       setError(e.message);
     }
-    setPhase('ready');
+    setPhase('idle');
   }
 
   async function close() {
@@ -506,18 +522,17 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
     setError('');
     try {
       await withdrawAsk(clientResultId);
-      setSlug(null);
-      onSlug?.(null);
+      onAskSlug?.(null);
       setPhase('idle');
     } catch (e) {
       setError(e.message);
-      setPhase('ready');
+      setPhase('idle');
     }
   }
 
   // Already answered: the only thing left to offer is shutting the link off.
   if (answered) {
-    if (!slug) return null;
+    if (!askSlug) return null;
     return (
       <div>
         <button className="btn-secondary" onClick={close} disabled={phase === 'closing'} style={{ fontSize: '0.8rem' }}>
@@ -532,7 +547,7 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
     );
   }
 
-  if (!slug) {
+  if (!askSlug) {
     return (
       <div>
         <button className="btn-primary" onClick={create} disabled={phase === 'creating'}>
@@ -547,7 +562,7 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
     );
   }
 
-  const url = askUrl(slug);
+  const url = askUrl(askSlug);
   return (
     <div>
       <code style={{

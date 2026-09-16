@@ -251,3 +251,28 @@ describe('symmetryLine', () => {
     expect(symmetryLine(small, big)).toMatch(/bigger move/);
   });
 });
+
+describe('whose words the reading quotes', () => {
+  // A regression guard for a bug that survived every unit test and only showed
+  // up on screen: the note is written by the person who says where they want
+  // the bond to be, and in the owner's own view that is the OTHER person. A
+  // reading that quotes only the reader's own words silently drops the single
+  // most personal thing the other person said.
+  const path = findPath(P.Sofia, TENDER, ROMANCE);
+
+  it('quotes the mover when the reader is the landscape owner', () => {
+    const n = buildPathNarrative(path, { perspective: 'owner', otherName: 'Sam', note: 'closer, and soon' });
+    expect(n.sections.find((s) => s.kind === 'wanting').text).toContain('“closer, and soon”');
+    expect(allText(n)).toContain("Sam's own words");
+  });
+
+  it('quotes the mover when the reader is the mover', () => {
+    const n = buildPathNarrative(path, { perspective: 'partner', otherName: 'Robin', note: 'closer, and soon' });
+    expect(allText(n)).toContain('your own words');
+  });
+
+  it('says nothing about words when none were written', () => {
+    const n = buildPathNarrative(path, { perspective: 'owner', otherName: 'Sam' });
+    expect(allText(n)).not.toContain('own words');
+  });
+});
