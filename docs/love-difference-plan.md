@@ -4,7 +4,7 @@
 
 *Naming: the operator chose the "growth journey" direction (Sept 2026). "The Love Difference" below names the measured gap; "Growth Journey" names the feature and the narrative. See §12.5 for the shortlist.*
 
-*Phases A, B and C shipped (Sept 2026). See §13, §14 and §15 for what was built, what changed against this plan, and why.*
+*Phases A, B, C and E shipped (Sept 2026). See §13, §14, §15 and §16 for what was built, what changed against this plan, and why. Phase D remains the only unbuilt piece.*
 
 ## 1. The idea in one paragraph
 
@@ -180,7 +180,7 @@ Solo founder, ~10–15 h/week. Each phase ships alone and is useful alone.
 | **B. The ask link** ✅ **shipped** | migration 009, ask ops in `api/results.js`, `/ask/<slug>` served by `api/share.js`, ask screen in the SPA, sealed reveal enforced server-side, withdrawal on both sides, events and milestones. | `supabase/migrations/009_growth_journey.sql`, `api/results.js`, `api/share.js`, `vercel.json`, `src/data/asksClient.js`, `src/components/AskScreen.jsx`, `GrowthJourneyCard.jsx`, `Footer.jsx`, `App.jsx`, `public/privacy.html`, `tests/asks.test.js`, `tests/share.test.js` | done |
 | **C. Journey Reading (LLM)** ✅ **shipped** | prompt grounded in computed route facts, `journey` sku entitled per ask, card dormant until priced, migration 010. | `supabase/migrations/010_journey_reading.sql`, `api/_pathReadingPrompt.js`, `api/reading.js`, `api/checkout.js`, `api/webhook.js`, `src/components/JourneyReadingCard.jsx`, `GrowthJourneyCard.jsx`, `ResultsScreen.jsx`, `.env.example`, `tests/journeyReading.test.js` | done |
 | **D. Mutual view + wish pin** | both directions on one screen, L2 wish pin, symmetry sentence. | `LoveDifferenceCard.jsx`, `pathNarrative.js` | 6–10 h |
-| **E. Perception layer** | assessment reworded "about them", perceived-B landscape, per-dimension perception gap, radar overlay. | `AssessmentScreen.jsx` (mode prop), `src/data/questions.js` (about-them phrasings), new `PerceptionGap.jsx`, tests | 14–20 h |
+| **E. Perception layer** ✅ **shipped** | assessment reworded "about them", perceived landscape, per-dimension signed gap, radar overlay, reading. | `src/data/questions.js` (about phrasings + `questionsFor`), `AssessmentScreen.jsx` (mode prop), `src/data/perception.js`, `src/data/perceptions.js`, `src/components/PerceptionGapCard.jsx`, `RadarView.jsx`, `ResultsScreen.jsx`, `App.jsx`, `tests/perception.test.js`, `tests/perceptions.test.js` | done |
 | **F. Movement over time** | re-place later, show the route travelled. Needs accounts. | `placements` history, `MyLandscapes.jsx` | later |
 
 Phase A first. It proves the engine and the narrative with zero infrastructure. Phase B is the product the question asks for. C monetizes it on rails that already exist.
@@ -432,3 +432,79 @@ implying the free version is a teaser.
 
 Phase D (the mutual view and the owner's wish pin) and Phase E (the perception
 layer) are unchanged from §10. Neither is required by anything shipped so far.
+
+
+---
+
+## 16. Phase E as built (September 2026)
+
+Shipped and verified: 334 unit tests, and the full flow driven in a browser —
+invitation, the nineteen reworded questions, the gap, the reading, and retaking.
+
+### What it is
+
+Answer the same nineteen questions as you think **they** would. That produces
+your model of them, and holding it against their own answers gives a signed gap
+per dimension. It appears on the results screen whenever a partner's landscape
+is loaded, because without their answers there is nothing to check a guess
+against.
+
+### The framing, which is the feature
+
+This does not measure whether you are right about someone. It measures the
+distance between your picture of them and **their own account of themselves**,
+and both can be off. A person can describe themselves in a way their behaviour
+does not match; a person can also keep a whole dimension hidden from someone
+who loves them.
+
+So the reading says "neither is the truth" before it says anything else, and
+offers the innocent explanations — they never had reason to show you, they are
+still working it out, you mean different things by the question — before any
+harder one. Tests assert both.
+
+**Direction is kept throughout.** Over- and under-reading someone are opposite
+mistakes with opposite costs: crediting a person with more of something than
+they feel asks for what they cannot easily give, while reading it lower leaves
+a door closed they would have walked through. Several phrasings per direction,
+so three gaps in a row do not read as one sentence pasted three times.
+
+**Deliberately not scored.** A percentage for how well someone knows their
+partner is irresistible to share and impossible to hear well, and one or two
+items per dimension cannot support that precision. Bands and words; a
+difference under fifteen points is called matched rather than a misreading.
+
+### Decisions worth keeping
+
+1. **Rewritten, not translated.** A scenario about "your partner" becomes
+   ambiguous the moment the subject changes — whose partner? Each is rebuilt
+   around them. Option *wording* moves; option *values* never do, or the gap
+   would be partly an artefact of the copy. Test-locked.
+2. **Permission to be wrong, up front.** The intro spends most of its words on
+   it. Without that the exercise reads as a test of how good a partner you are,
+   people answer as they wish they saw the other person, and the gap
+   disappears into flattery.
+3. **Local-only, with no export.** A perceived landscape is one person's
+   private read on somebody else, recorded without their involvement — the most
+   sensitive thing this app holds. Never synced, never published, never offered
+   to research. The absence of an export is deliberate and test-locked: a guess
+   about someone is not yours to hand around.
+4. **No LLM pass.** The self-assessment can refine parameters from free-text
+   context. This does not: the notes would be about another person, and sending
+   them anywhere is exactly what the local-only rule exists to prevent.
+
+### What the browser run caught
+
+- **Answering about someone dropped the comparison.** It lives in the results
+  screen's own state, and that screen unmounts while the questions are being
+  answered — so nineteen questions about a specific person returned to a screen
+  that no longer knew who they meant, and the feature silently did nothing. The
+  partner is handed back on both completion and back-out.
+- **Two legends, three names for two colours.** The chart drew its own legend
+  calling the guess "Yours", underneath a second legend naming the same colours
+  differently. "Yours" was also simply wrong: that series is your picture of
+  them, not your own landscape. The chart takes the labels now.
+
+### What is left
+
+**Phase D** — the mutual view and the owner's wish pin — is the only unbuilt
+phase, and nothing shipped depends on it.
