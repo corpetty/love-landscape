@@ -5,6 +5,20 @@ import { constrainToMap } from '../terrain/placement.js';
 
 const CONTOUR_LEVELS = [-0.6, -0.3, 0.0, 0.3, 0.6];
 
+/**
+ * Keep a label inside the map box.
+ *
+ * Labels are centred on their feature, which clips whatever sits near an edge —
+ * the physical axis label rendered as "PHYS", and the ungrounded-intensity
+ * ridge lost its second word entirely. Near an edge the label anchors to its
+ * inner side instead of its centre.
+ */
+function edgeAwareTransform(x, y) {
+  const tx = x > 0.78 ? '-100%' : x < 0.22 ? '0%' : '-50%';
+  const ty = y > 0.92 ? '-100%' : y < 0.08 ? '0%' : '-50%';
+  return `translate(${tx}, ${ty})`;
+}
+
 function interpolateColor(val) {
   const ramp = COLOR_RAMP;
   if (val <= ramp[0].val) return ramp[0];
@@ -283,7 +297,7 @@ export default function ContourView({
                 position: 'absolute',
                 left: `${feat.x * 100}%`,
                 top: `${feat.y * 100}%`,
-                transform: 'translate(-50%, -50%)',
+                transform: edgeAwareTransform(feat.x, feat.y),
                 fontSize: '0.65rem',
                 fontWeight: 600,
                 color: feat.isRidge ? '#f97066' : '#2dd4a8',
@@ -312,7 +326,9 @@ export default function ContourView({
                 transform: 'translate(-50%, -50%)',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
+                // The dot must stay exactly on the point; only the caption
+                // under it shifts inward when the pin sits near an edge.
+                alignItems: m.x > 0.78 ? 'flex-end' : m.x < 0.22 ? 'flex-start' : 'center',
                 gap: '2px',
                 zIndex: 2,
               }}
@@ -349,7 +365,7 @@ export default function ContourView({
                 position: 'absolute',
                 left: `${ax.x * 100}%`,
                 top: `${ax.y * 100}%`,
-                transform: 'translate(-50%, -50%)',
+                transform: edgeAwareTransform(ax.x, ax.y),
                 fontSize: '0.6rem',
                 fontWeight: 700,
                 textTransform: 'uppercase',

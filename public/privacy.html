@@ -57,6 +57,7 @@
       <tr><td>Email address</td><td>Only if you create an account</td><td>Until account deletion</td></tr>
       <tr><td>Codes you save for comparison (a partner's code you chose to keep)</td><td>Only if you save a comparison</td><td>Purged after 24 months, or with your account</td></tr>
       <tr><td>Purchase records (Stripe id, amount) and purchased readings</td><td>Only if you buy a Full Reading</td><td>Financial record kept for accounting; the reading text is deleted with your account</td></tr>
+      <tr><td>Growth Journey pins — a point on a landscape, and the note written with it</td><td>Only if you send a question link, or answer someone else's</td><td>Until the question is closed, the landscape is deleted, or the account is deleted</td></tr>
     </table>
     <p class="muted">
       Your free-text notes to the AI are sent to the language model to generate your reading and
@@ -64,6 +65,21 @@
       service by default). Research contribution is a separate, explicit opt-in and is stored
       anonymously, disconnected from accounts and from everything above.
     </p>
+
+    <h2>The Growth Journey and its question links</h2>
+    <p>
+      A Growth Journey asks where one particular bond sits on a landscape and where it wants to
+      be. Unlike everything else here, an answer is written by <em>another person</em> about a
+      relationship with you, so it deserves its own paragraph.
+    </p>
+    <ul>
+      <li>Marking pins on your own device and exchanging <strong>V2_ codes</strong> by hand stores nothing on our servers. The codes work offline and carry the landscape they describe.</li>
+      <li>Sending a <strong>question link</strong> does store: the link, your pin, and — once answered — their pin and any note they wrote. Nothing else; no name is attached to either side.</li>
+      <li>A question link is <strong>not indexed</strong> and its preview shows nothing about your landscape. Anyone holding the link can still open it and see your terrain, so send it the way you'd send your code.</li>
+      <li>Whoever answers can <strong>revise or delete their own answer</strong> from the device they used, with no account.</li>
+      <li>You can <strong>close a question at any time</strong>, including after it has been answered. Closing is permanent: the link stops working for good.</li>
+      <li>Pins and notes are never published, never put on a share page or preview image, and never included in research data.</li>
+    </ul>
 
     <h2>Sharing and its limits — read this before publishing</h2>
     <ul>
@@ -81,7 +97,8 @@
     </p>
     <p>
       <strong>With an account:</strong> My Landscapes → “Delete my account and data” removes your
-      account, landscapes, comparisons, and purchased readings immediately. Anonymous counters are
+      account, landscapes, comparisons, question links (with every pin and note on them), and
+      purchased readings immediately. Anonymous counters are
       irreversibly disconnected from you. Purchase records keep only what payment reconciliation
       requires (no reading content). Devices you used may hold local copies until their site data
       is cleared.

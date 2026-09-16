@@ -284,9 +284,25 @@ function JourneyDirection({
       {mine && !editing && (
         <div className="card" style={{ marginTop: '0.75rem', padding: '1rem 1.15rem' }}>
           {theirs ? (
-            <p style={{ fontSize: '0.88rem', color: '#2dd4a8' }}>
-              ✓ {partnerName || 'They'} {role.theirDone}.
-            </p>
+            <>
+              <p style={{ fontSize: '0.88rem', color: '#2dd4a8', marginBottom: clientResultId ? '0.6rem' : 0 }}>
+                ✓ {partnerName || 'They'} {role.theirDone}.
+              </p>
+              {/* An answered ask still serves the landscape to anyone holding
+                  the link. The owner keeps the ability to close it — revoking
+                  access must not become impossible by succeeding. */}
+              {clientResultId && (
+                <AskLinkPanel
+                  clientResultId={clientResultId}
+                  point={mine}
+                  other={other}
+                  onCopy={onCopy}
+                  copied={copied}
+                  onAnswerReceived={onAnswerReceived}
+                  answered
+                />
+              )}
+            </>
           ) : (
             <>
               <h5 style={{ fontSize: '0.9rem', marginBottom: '0.35rem' }}>{role.askTitle(other)}</h5>
@@ -401,7 +417,7 @@ function JourneyDirection({
  * hours or days later, not seconds, so a background poll would spend requests
  * on nothing and put a spinner on a screen where nothing is happening.
  */
-function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerReceived }) {
+function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerReceived, answered = false }) {
   const [slug, setSlug] = useState(null);
   const [phase, setPhase] = useState('idle'); // idle | creating | ready | checking | closing
   const [error, setError] = useState('');
@@ -468,6 +484,23 @@ function AskLinkPanel({ clientResultId, point, other, onCopy, copied, onAnswerRe
       setError(e.message);
       setPhase('ready');
     }
+  }
+
+  // Already answered: the only thing left to offer is shutting the link off.
+  if (answered) {
+    if (!slug) return null;
+    return (
+      <div>
+        <button className="btn-secondary" onClick={close} disabled={phase === 'closing'} style={{ fontSize: '0.8rem' }}>
+          {phase === 'closing' ? 'Closing…' : 'Close the link'}
+        </button>
+        <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.4rem', lineHeight: 1.55 }}>
+          The link still opens your landscape for anyone who has it. Closing stops that for good;
+          the answer you already have stays.
+        </p>
+        {error && <p role="alert" style={{ color: '#f97066', fontSize: '0.84rem', marginTop: '0.35rem' }}>{error}</p>}
+      </div>
+    );
   }
 
   if (!slug) {

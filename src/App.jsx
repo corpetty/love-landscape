@@ -103,6 +103,11 @@ function consumeArchetypeBootstrap() {
   return null;
 }
 
+// Screens where the default footer promise would be untrue.
+const PRIVACY_NOTES = {
+  ask: 'Your answer goes to the person who sent this link, and nowhere else.',
+};
+
 const META_DESCRIPTIONS = {
   intro: 'A 19-question assessment that maps your relational openness onto a 3D terrain. See where your relationships naturally settle — and where the ridges are.',
   assessment: 'Answer 19 questions about how you experience intimacy, touch, trust, and connection.',
@@ -428,7 +433,7 @@ export default function App() {
       <>
         {header}
         <TerrainEngine onBack={goMethods} />
-        <Footer onAbout={goAbout} onMethods={goMethods} />
+        <Footer onAbout={goAbout} onMethods={goMethods} privacyNote={PRIVACY_NOTES[screen]} />
         {authModal}
       </>
     );
@@ -532,7 +537,7 @@ export default function App() {
     <>
       {header}
       {content}
-      <Footer onAbout={goAbout} onMethods={goMethods} />
+      <Footer onAbout={goAbout} onMethods={goMethods} privacyNote={PRIVACY_NOTES[screen]} />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
       {authModal}
     </>
