@@ -4,7 +4,7 @@
 
 *Naming: the operator chose the "growth journey" direction (Sept 2026). "The Love Difference" below names the measured gap; "Growth Journey" names the feature and the narrative. See §12.5 for the shortlist.*
 
-*Phase A shipped (Sept 2026). See §13 for what was built, what changed against this plan, and why.*
+*Phases A and B shipped (Sept 2026). See §13 and §14 for what was built, what changed against this plan, and why.*
 
 ## 1. The idea in one paragraph
 
@@ -177,7 +177,7 @@ Solo founder, ~10–15 h/week. Each phase ships alone and is useful alone.
 | Phase | Scope | Files | Est. |
 |---|---|---|---|
 | **A. Engine + local difference** ✅ **shipped** | pathfinder, placement helpers, `V2_` codes, PlacementPicker, GrowthJourneyCard with free narrative. Code-only exchange. Unit tests lock the climb weight and the persona routes. | `src/terrain/pathfinder.js`, `src/terrain/placement.js`, `src/data/encoding.js`, `src/data/pathNarrative.js`, `src/data/journeys.js`, `src/components/PlacementPicker.jsx`, `src/components/GrowthJourneyCard.jsx`, `ContourView.jsx`, `ResultsScreen.jsx`, `PairCompatibility.jsx`, plus five test files | done |
-| **B. The ask link** | migration 009, ask ops in `api/results.js`, `/ask/<slug>` in `api/share.js`, ask page in the SPA, sealed reveal, events. | `supabase/migrations/009_love_difference.sql`, `api/results.js`, `api/share.js`, `middleware.js`, `vercel.json`, `src/components/AskScreen.jsx`, `App.jsx`, `tests/results.test.js`, `tests/share.test.js` | 18–24 h |
+| **B. The ask link** ✅ **shipped** | migration 009, ask ops in `api/results.js`, `/ask/<slug>` served by `api/share.js`, ask screen in the SPA, sealed reveal enforced server-side, withdrawal on both sides, events and milestones. | `supabase/migrations/009_growth_journey.sql`, `api/results.js`, `api/share.js`, `vercel.json`, `src/data/asksClient.js`, `src/components/AskScreen.jsx`, `GrowthJourneyCard.jsx`, `Footer.jsx`, `App.jsx`, `public/privacy.html`, `tests/asks.test.js`, `tests/share.test.js` | done |
 | **C. Path Reading (LLM)** | prompt, `path` sku, card, dormant until price env set (same pattern as the compatibility report). | `api/_pathReadingPrompt.js`, `api/reading.js`, `api/checkout.js`, `api/webhook.js`, `src/components/PathReadingCard.jsx`, `tests/reading.test.js` | 10–14 h |
 | **D. Mutual view + wish pin** | both directions on one screen, L2 wish pin, symmetry sentence. | `LoveDifferenceCard.jsx`, `pathNarrative.js` | 6–10 h |
 | **E. Perception layer** | assessment reworded "about them", perceived-B landscape, per-dimension perception gap, radar overlay. | `AssessmentScreen.jsx` (mode prop), `src/data/questions.js` (about-them phrasings), new `PerceptionGap.jsx`, tests | 14–20 h |
@@ -199,7 +199,7 @@ Phase A first. It proves the engine and the narrative with zero infrastructure. 
    - **λ became `CLIMB_WEIGHT = 1.6`**, not the ~4 sketched in §4. At 4, a moderate ridge cost more than walking the entire map, so every route went around everything.
    - **The steepness measure is the crest** (the climb from the start to the route's high point), not total climb. Total climb is dominated by the cost of leaving the start valley and grows with route length, so it made all eight seed personas an "expedition" on every journey. The barrier above *both* endpoints, the other candidate, is zero on most real journeys because the destination is usually itself the high point; it survives as the `wall-between` flag. Both constants are locked by tests that split the personas rather than the journeys.
 3. **Decided — guest answers are allowed.** B can mark a point with no assessment and no account. The assessment CTA follows the submit, and the answer links to B's result if B takes it later (§6). Both paths are measured.
-4. **Regret path.** Should a person be able to un-send an ask after B has answered but before A has placed? Recommendation: yes, until reveal. Still open — it is a Phase B question, since Phase A has no ask to un-send.
+4. **Decided in Phase B — both sides can take their part back, with no time window.** The plan framed this as "un-send until reveal", but the owner places their pin when they *create* the ask, so there is no window in which the owner has not placed. A window would also be fake precision: the server cannot know when the owner read the answer. What shipped instead is two one-way exits, each available to the person whose thing it is — the owner closes the ask (the link 410s for good, including after it has been answered), and the answerer deletes their own answer using the token their device minted. Neither requires an account: retracting must never be harder than answering was.
 5. **Naming — decided in direction.** The feature is a *growth journey*. Two words carry two jobs, so keep both:
    - **The gap** (a noun for the measurement): "the love difference" stays as the internal and methods-page term.
    - **The feature and narrative** (what people see and share): pick one from the growth-journey family. Shortlist, in terrain vocabulary:
@@ -271,3 +271,86 @@ in place: `V2_` codes already carry the terrain a point was marked on, the
 sealed-reveal gate is enforced in the card, and `journeys.js` is the local
 mirror of what `placements` will hold. Migration 009 and the ask ops in
 `api/results.js` are unchanged from §6.
+
+
+---
+
+## 14. Phase B as built (September 2026)
+
+Shipped and verified: 259 unit tests pass, and the whole loop was driven in a
+browser against the *real* API handlers behind a local harness — create,
+answer from a second browser context with no account, reveal, the owner
+checking back, closing after an answer, and a closed link serving 410.
+
+### The shape of it
+
+An **ask** is one landscape opened to one question. A **placement** is one
+answer: a point on that landscape.
+
+| Route / op | Who | What it does |
+|---|---|---|
+| `ask_create` | owner | Opens the ask with their own pin already placed, and returns the slug. Reuses an open ask, so a link already sent keeps working. |
+| `GET /ask/<slug>` | anyone with the link | Serves the SPA with `window.__ASK__` — the landscape, and nothing else. |
+| `ask_get` | anyone with the link | The landscape and whether it is answered. **Never the owner's pin.** |
+| `ask_answer` | the partner, as a guest | Stores the answer and returns the reveal in the same response. |
+| `ask_status` | owner | Has it come back? Returns both pins once it has. |
+| `ask_withdraw` | either | Owner closes the ask; answerer deletes their own answer. |
+
+No new serverless function: `/ask/<slug>` is a rewrite onto `api/share.js`
+(alongside `/r/` and `/a/`), and the ops live in `api/results.js` beside the
+ownership model they reuse.
+
+### Decisions worth keeping
+
+1. **The sealed reveal is a server rule, not a UI rule.** `ask_get` does not
+   return the owner's pin, so a visitor reading the network tab learns nothing
+   they could anchor their answer to. Enforcing it in the component would have
+   made the guarantee cosmetic.
+2. **The reveal is the payoff, and therefore the CTA.** Answering returns the
+   owner's pin, the route and the reading — and that screen is where the
+   assessment is offered. The growth loop runs through the moment the visitor
+   is most interested, not through a wall in front of it.
+3. **Guests, by design.** No account and no assessment to answer. Nineteen
+   questions in front of a thirty-second question would trade the answer for
+   the funnel.
+4. **An ask link is not a share page.** noindex, the site's generic image
+   rather than the sender's terrain, and a title naming no archetype: a preview
+   in a group chat must not reveal what the recipient has not opened. It is
+   also `no-store`, because a cached page would keep taking answers to a closed
+   question.
+5. **Two one-way exits** — see §12.4.
+
+### What the browser run caught that the tests did not
+
+- The footer promised *"your answers never leave your device"* on the one
+  screen where that is false. It now takes a per-screen note.
+- An answered ask lost its close button, so revoking access became impossible
+  by succeeding. Closing is offered in both states.
+- Map labels near an edge were clipped — the physical axis read `PHYS`. Labels
+  now anchor to their inner side near an edge.
+
+### What the test mock caught
+
+The mock deliberately applies **no column defaults** and **no column
+projection**. Both departures found real defects: code that filtered on a
+`status` it never wrote, and a reveal whose privacy rested on the SELECT string
+rather than on the code building the response. The reveal now goes through a
+mapper that names the three fields allowed to travel, so a column added later
+cannot leak by default.
+
+### Deployment notes
+
+- Apply `supabase/migrations/009_growth_journey.sql` before deploying. It is
+  additive: two tables, plus widened CHECK constraints on `events.name` and
+  `milestones.kind`.
+- `admin_metrics()` needs no change — it aggregates by kind and simply gains
+  `ask` and `ask_answered` keys. The frozen Phase-0 gate metrics are untouched.
+- Account deletion needs no new code: `asks` cascade from `results`, and
+  `placements` cascade from `asks`.
+
+### Ready for Phase C
+
+The paid Journey Reading needs a `path` sku in `api/reading.js` and a prompt
+beside `_fullReadingPrompt.js`. Both directions of path facts are already
+available client-side, and the server now holds the pins a purchased reading
+would be generated from.
