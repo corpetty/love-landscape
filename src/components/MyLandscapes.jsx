@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../data/supabase.js';
 import { useAuth } from '../data/auth.js';
-import { getOwnedResults, setLocalLabel, removeOwned, ensureSynced } from '../data/resultsClient.js';
+import { getOwnedResults, setLocalLabel, removeOwned, ensureSynced, adoptOwned } from '../data/resultsClient.js';
 import { isDev } from '../data/journey.js';
 
 /**
@@ -86,6 +86,24 @@ export default function MyLandscapes({ onOpen, onBack }) {
   }, [user]);
 
   useEffect(() => { load(); }, [load]);
+
+  /**
+   * Opening an account landscape on a device that has never held it must leave
+   * the device knowing it owns the thing — otherwise the results screen treats
+   * it as somebody else's code and hides every owner-only feature on it.
+   */
+  function openRow(row) {
+    if (row.result_id && !row.local) {
+      adoptOwned({
+        client_result_id: row.client_result_id,
+        result_id: row.result_id,
+        code: row.code,
+        label: row.label || null,
+        is_public: row.is_public,
+      });
+    }
+    onOpen(row.code);
+  }
 
   async function saveLabel(row) {
     const label = labelDraft.trim().slice(0, 100);
@@ -182,7 +200,7 @@ export default function MyLandscapes({ onOpen, onBack }) {
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.4rem' }}>
-              <button className="btn-primary" onClick={() => onOpen(row.code)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}>
+              <button className="btn-primary" onClick={() => openRow(row)} style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}>
                 Open
               </button>
               {confirmDelete === row.client_result_id ? (
