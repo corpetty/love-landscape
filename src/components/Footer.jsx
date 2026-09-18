@@ -67,6 +67,21 @@ export default function Footer({ onAbout, onMethods, privacyNote = DEFAULT_PRIVA
         >
           Privacy
         </a>
+        <span style={{ opacity: 0.3 }}>|</span>
+        <a
+          href="https://bayesianpersuasion.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Bayesian Persuasion — my personal site"
+          style={{
+            fontSize: '0.8rem',
+            color: 'var(--color-text-muted)',
+            textDecoration: 'underline',
+            textUnderlineOffset: '2px',
+          }}
+        >
+          Bayesian Persuasion
+        </a>
       </div>
     </footer>
   );
